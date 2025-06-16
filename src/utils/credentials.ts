@@ -1,4 +1,6 @@
-import { getPreferenceValues, showToast, Toast, LocalStorage } from "@raycast/api";
+import { getPreferenceValues } from "./webPreferences";
+import { showToast, Toast_Style as Toast } from "../components/WebToast";
+import { LocalStorage } from "./webStorage";
 import { getUserProfileService } from "./userProfile";
 import { storeUserInfo, clearStoredUserInfo, isStoredUserInfoValid, getStoredUserInfo } from "../storage/userStorage";
 import { UserResponse } from "../api/types";
@@ -256,7 +258,7 @@ export async function validateCredentials(): Promise<CredentialsValidationResult
  */
 export async function showCredentialsError(error: string) {
   await showToast({
-    style: Toast.Style.Failure,
+    style: Toast.Failure,
     title: "Authentication Error",
     message: error,
     primaryAction: {

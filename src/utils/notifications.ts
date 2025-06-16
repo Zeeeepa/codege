@@ -1,4 +1,4 @@
-import { showToast, Toast, showHUD } from "@raycast/api";
+import { showToast, Toast_Style as Toast } from "../components/WebToast";
 import { AgentRunStatusChange, AgentRunStatus } from "../api/types";
 
 export interface NotificationManager {
@@ -66,7 +66,8 @@ class RaycastNotificationManager implements NotificationManager {
       
       // Fallback to HUD notification
       try {
-        await showHUD(title);
+        // await showHUD(title);
+  console.log(title);
         console.log(`✅ HUD fallback notification sent for agent run ${agentRunId}`);
       } catch (hudError) {
         console.error(`❌ Failed to send HUD notification for agent run ${agentRunId}:`, hudError);
@@ -77,7 +78,7 @@ class RaycastNotificationManager implements NotificationManager {
   async notifyAgentRunCreated(agentRunId: number, organizationId: number): Promise<void> {
     try {
       await showToast({
-        style: Toast.Style.Success,
+        style: Toast.Success,
         title: `Agent Run #${agentRunId} • Started`,
         message: "🚀 Your agent run has been created and is now being tracked"
       });
@@ -87,7 +88,8 @@ class RaycastNotificationManager implements NotificationManager {
       
       // Fallback to HUD
       try {
-        await showHUD(`🚀 Agent run #${agentRunId} started`);
+        // await showHUD(`🚀 Agent run #${agentRunId} started`);
+        console.log(`🚀 Agent run #${agentRunId} started`);
       } catch (hudError) {
         console.error(`❌ Failed to send HUD creation notification:`, hudError);
       }
@@ -101,7 +103,7 @@ class RaycastNotificationManager implements NotificationManager {
   ): {
     title: string;
     message: string;
-    style: Toast.Style;
+    style: 'success' | 'failure' | 'animated';
     shouldNotify: boolean;
   } {
     // Don't notify for initial status setting or certain transitions
@@ -109,7 +111,7 @@ class RaycastNotificationManager implements NotificationManager {
       return {
         title: "",
         message: "",
-        style: Toast.Style.Success,
+        style: Toast.Success,
         shouldNotify: false,
       };
     }
@@ -119,7 +121,7 @@ class RaycastNotificationManager implements NotificationManager {
       return {
         title: "",
         message: "",
-        style: Toast.Style.Success,
+        style: Toast.Success,
         shouldNotify: false,
       };
     }
@@ -131,7 +133,7 @@ class RaycastNotificationManager implements NotificationManager {
         return {
           title: `${baseTitle} • Complete`,
           message: "✅ Your agent run has finished successfully",
-          style: Toast.Style.Success,
+          style: Toast.Success,
           shouldNotify: true,
         };
 
@@ -139,7 +141,7 @@ class RaycastNotificationManager implements NotificationManager {
         return {
           title: `${baseTitle} • Failed`,
           message: "❌ Your agent run encountered an error",
-          style: Toast.Style.Failure,
+          style: Toast.Failure,
           shouldNotify: true,
         };
 
@@ -147,7 +149,7 @@ class RaycastNotificationManager implements NotificationManager {
         return {
           title: `${baseTitle} • Cancelled`,
           message: "🛑 Your agent run was cancelled",
-          style: Toast.Style.Failure,
+          style: Toast.Failure,
           shouldNotify: true,
         };
 
@@ -155,7 +157,7 @@ class RaycastNotificationManager implements NotificationManager {
         return {
           title: `${baseTitle} • Timed Out`,
           message: "⏰ Your agent run exceeded the time limit",
-          style: Toast.Style.Failure,
+          style: Toast.Failure,
           shouldNotify: true,
         };
 
@@ -163,7 +165,7 @@ class RaycastNotificationManager implements NotificationManager {
         return {
           title: `${baseTitle} • Max Iterations`,
           message: "🔄 Your agent run reached the maximum number of iterations",
-          style: Toast.Style.Failure,
+          style: Toast.Failure,
           shouldNotify: true,
         };
 
@@ -171,7 +173,7 @@ class RaycastNotificationManager implements NotificationManager {
         return {
           title: `${baseTitle} • Out of Tokens`,
           message: "🪙 Your agent run ran out of tokens",
-          style: Toast.Style.Failure,
+          style: Toast.Failure,
           shouldNotify: true,
         };
 
@@ -181,14 +183,14 @@ class RaycastNotificationManager implements NotificationManager {
           return {
             title: `${baseTitle} • Active`,
             message: "🚀 Your agent run is now active",
-            style: Toast.Style.Success,
+            style: Toast.Success,
             shouldNotify: true,
           };
         }
         return {
           title: "",
           message: "",
-          style: Toast.Style.Success,
+          style: Toast.Success,
           shouldNotify: false,
         };
 
@@ -196,7 +198,7 @@ class RaycastNotificationManager implements NotificationManager {
         return {
           title: `${baseTitle} • Status Changed`,
           message: `📋 Status changed to ${newStatus}`,
-          style: Toast.Style.Success,
+          style: Toast.Success,
           shouldNotify: true,
         };
     }
@@ -210,7 +212,7 @@ class RaycastNotificationManager implements NotificationManager {
     
     try {
       await showToast({
-        style: Toast.Style.Success,
+        style: Toast.Success,
         title: "🧪 Test Notification",
         message: "This is a test notification from Codegen"
       });
@@ -218,7 +220,8 @@ class RaycastNotificationManager implements NotificationManager {
     } catch (error) {
       console.warn("❌ Test notification failed, trying HUD fallback:", error);
       try {
-        await showHUD("🧪 Test notification (HUD fallback)");
+        // await showHUD("🧪 Test notification (HUD fallback)");
+  console.log("🧪 Test notification (HUD fallback)");
         console.log("✅ HUD test notification sent");
       } catch (hudError) {
         console.error("❌ Both notification methods failed:", hudError);

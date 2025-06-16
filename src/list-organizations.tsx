@@ -1,24 +1,38 @@
+import { useState, useEffect } from "react";
+import {
+  List,
+  ListItem as List_Item,
+  ListEmptyView as List_EmptyView,
+} from "./components/WebList";
+import {
+  ActionPanel,
+  Action,
+  OpenAction,
+  CopyAction,
+} from "./components/WebActionPanel";
+import { showToast, Toast_Style as Toast } from "./components/WebToast";
+import { LocalStorage } from "./utils/webStorage";
+import { getAPIClient } from "./api/client";
+import { validateCredentials, hasCredentials } from "./utils/credentials";
+import { OrganizationResponse } from "./api/types";
+import { useCurrentUser } from "./hooks/useCurrentUser";
+
+// Color constants for web UI
+const Color = {
+  Blue: '#007AFF',
+  Green: '#34C759',
+  Red: '#FF3B30',
+  Orange: '#FF9500',
+  Yellow: '#FFCC00',
+  SecondaryText: '#8E8E93'
+};
+
 // Load environment variables first
 try {
   require('dotenv').config();
 } catch (error) {
   console.log("dotenv loading error:", error);
 }
-
-import { useState, useEffect } from "react";
-import {
-  List,
-  ActionPanel,
-  Action,
-  Icon,
-  showToast,
-  Toast,
-  LocalStorage,
-} from "@raycast/api";
-import { getAPIClient } from "./api/client";
-import { validateCredentials, hasCredentials } from "./utils/credentials";
-import { OrganizationResponse } from "./api/types";
-import { useCurrentUser } from "./hooks/useCurrentUser";
 
 // Type for organizations from validation (simplified structure)
 type BasicOrganization = {
@@ -86,13 +100,13 @@ export default function ListOrganizations() {
       setDefaultOrgId(orgId);
       
       await showToast({
-        style: Toast.Style.Success,
+        style: Toast.Success,
         title: "Default Organization Set",
         message: `${selectedOrg?.name || 'Organization'} will be used as default for new agent runs`,
       });
     } catch (error) {
       await showToast({
-        style: Toast.Style.Failure,
+        style: Toast.Failure,
         title: "Failed to Set Default",
         message: error instanceof Error ? error.message : "Unknown error",
       });
@@ -107,13 +121,13 @@ export default function ListOrganizations() {
       setDefaultOrgId(null);
       
       await showToast({
-        style: Toast.Style.Success,
+        style: Toast.Success,
         title: "Default Organization Cleared",
         message: "No default organization is set",
       });
     } catch (error) {
       await showToast({
-        style: Toast.Style.Failure,
+        style: Toast.Failure,
         title: "Failed to Clear Default",
         message: error instanceof Error ? error.message : "Unknown error",
       });
@@ -142,16 +156,16 @@ export default function ListOrganizations() {
   if (error && !isLoading) {
     return (
       <List>
-        <List.EmptyView
-          icon={Icon.ExclamationMark}
+        <List_EmptyView
+          
           title="Error Loading Organizations"
           description={error}
           actions={
             <ActionPanel>
               <Action title="Retry" onAction={refresh} />
-              <Action.OpenInBrowser
+              <OpenAction
                 title="Open Extension Preferences"
-                url="raycast://extensions/codegen/codegen"
+                target="https://codegen.com/settings"
               />
             </ActionPanel>
           }
@@ -166,16 +180,15 @@ export default function ListOrganizations() {
     <List 
       isLoading={isLoading} 
       searchBarPlaceholder="Search organizations..."
-      navigationTitle={navigationTitle}
     >
       {organizations.length === 0 && !isLoading ? (
-        <List.EmptyView
-          icon={Icon.Building}
+        <List_EmptyView
+          
           title="No Organizations Found"
           description="You don't have access to any organizations"
           actions={
             <ActionPanel>
-              <Action title="Refresh" icon={Icon.ArrowClockwise} onAction={refresh} />
+              <Action title="Refresh"  onAction={refresh} />
             </ActionPanel>
           }
         />
@@ -184,55 +197,53 @@ export default function ListOrganizations() {
           const isDefault = defaultOrgId === org.id;
           
           return (
-            <List.Item
+            <List_Item
               key={org.id}
               title={org.name}
               subtitle={`Organization ID: ${org.id}`}
-              icon={isDefault ? { source: Icon.Star, tintColor: "#FFD700" } : Icon.Building}
+              
               accessories={[
-                ...(isDefault ? [{ text: "Default", icon: Icon.Star }] : []),
+                ...(isDefault ? [{ text: "Default", }] : []),
               ]}
               actions={
                 <ActionPanel>
-                  <ActionPanel.Section>
+                  
                     {!isDefault ? (
                       <Action
                         title="Set as Default"
-                        icon={Icon.Star}
+                        
                         onAction={() => setDefaultOrganization(org.id)}
                         shortcut={{ modifiers: ["cmd"], key: "d" }}
                       />
                     ) : (
                       <Action
                         title="Clear Default"
-                        icon={Icon.StarDisabled}
+                        
                         onAction={clearDefaultOrganization}
                         shortcut={{ modifiers: ["cmd"], key: "d" }}
                       />
                     )}
-                  </ActionPanel.Section>
+                  
 
-                  <ActionPanel.Section>
-                    <Action.CopyToClipboard
+                  
+                    <CopyAction
                       title="Copy Organization ID"
                       content={org.id.toString()}
-                      shortcut={{ modifiers: ["cmd"], key: "c" }}
                     />
-                    <Action.CopyToClipboard
+                    <CopyAction
                       title="Copy Organization Name"
                       content={org.name}
-                      shortcut={{ modifiers: ["cmd", "shift"], key: "c" }}
                     />
-                  </ActionPanel.Section>
+                  
 
-                  <ActionPanel.Section>
+                  
                     <Action
                       title="Refresh"
-                      icon={Icon.ArrowClockwise}
+                      
                       onAction={refresh}
                       shortcut={{ modifiers: ["cmd"], key: "r" }}
                     />
-                  </ActionPanel.Section>
+                  
                 </ActionPanel>
               }
             />

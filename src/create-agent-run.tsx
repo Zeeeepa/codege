@@ -1,17 +1,21 @@
 import { useState, useEffect } from "react";
 import {
   Form,
+  FormTextField as Form_TextField,
+  FormDropdown as Form_Dropdown,
+  FormCheckbox as Form_Checkbox,
+  DropdownItem as Dropdown_Item,
+} from "./components/WebForm";
+import {
   ActionPanel,
   Action,
-  showToast,
-  Toast,
-  useNavigation,
-  getPreferenceValues,
-  Clipboard,
-  Icon,
-  Color,
-  LocalStorage,
-} from "@raycast/api";
+  OpenAction,
+} from "./components/WebActionPanel";
+import { showToast, Toast_Style as Toast } from "./components/WebToast";
+import { useNavigation } from "./hooks/useWebNavigation";
+import { getPreferenceValues } from "./utils/webPreferences";
+import { Clipboard } from "./utils/webClipboard";
+import { LocalStorage } from "./utils/webStorage";
 import { getCurrentUserFirstName } from "./utils/userProfile";
 import { getAPIClient } from "./api/client";
 import { getAgentRunCache } from "./storage/agentRunCache";
@@ -124,7 +128,7 @@ export default function CreateAgentRun() {
   async function handleSubmit(values: FormValues) {
     if (!values.prompt.trim()) {
       await showToast({
-        style: Toast.Style.Failure,
+        style: Toast.Failure,
         title: "Let me know what to build",
         message: "I need a description of what you want me to create",
       });
@@ -133,7 +137,7 @@ export default function CreateAgentRun() {
 
     if (!values.organizationId) {
       await showToast({
-        style: Toast.Style.Failure,
+        style: Toast.Failure,
         title: "Choose an organization", 
         message: "I need to know which organization to create this in",
       });
@@ -178,7 +182,7 @@ export default function CreateAgentRun() {
       await refresh();
 
       await showToast({
-        style: Toast.Style.Success,
+        style: Toast.Success,
         title: "Got it! I'm on it",
         message: `Starting agent run #${agentRun.id} - I'll let you know when it's done`,
         primaryAction: {
@@ -195,7 +199,7 @@ export default function CreateAgentRun() {
       console.error("Failed to create agent run:", error);
       
       await showToast({
-        style: Toast.Style.Failure,
+        style: Toast.Failure,
         title: "Oops, something went wrong",
         message: error instanceof Error ? error.message : "Let's try that again",
       });
@@ -210,10 +214,9 @@ export default function CreateAgentRun() {
         navigationTitle="Let's get you set up"
         actions={
           <ActionPanel>
-            <Action.OpenInBrowser
+            <OpenAction
               title="Configure API Token"
-              url="raycast://extensions/codegen/codegen"
-              icon={Icon.Gear}
+              target="https://codegen.com/settings"
             />
           </ActionPanel>
         }
@@ -236,15 +239,20 @@ export default function CreateAgentRun() {
       isLoading={isLoading || isLoadingOrgs}
       actions={
         <ActionPanel>
-          <Action.SubmitForm
+          <Action
             title="Let's Build This"
-            icon={Icon.Rocket}
-            onSubmit={handleSubmit}
+            onAction={() => {
+              // Get form values and submit
+              const form = document.querySelector('.web-form') as HTMLFormElement;
+              if (form) {
+                const formData = new FormData(form);
+                const values = Object.fromEntries(formData.entries()) as any;
+                handleSubmit(values);
+              }
+            }}
           />
           <Action
             title="Add from Clipboard"
-            icon={Icon.Clipboard}
-            shortcut={{ modifiers: ["cmd"], key: "v" }}
             onAction={async () => {
               try {
                 const clipboardText = await Clipboard.readText();
@@ -252,14 +260,14 @@ export default function CreateAgentRun() {
                   // This would update the form field if there was a way to do so
                   // For now, users can manually paste
                   await showToast({
-                    style: Toast.Style.Success,
+                    style: Toast.Success,
                     title: "Clipboard Content Available",
                     message: "You can paste this content into the prompt field",
                   });
                 }
               } catch (error) {
                 await showToast({
-                  style: Toast.Style.Failure,
+                  style: Toast.Failure,
                   title: "Clipboard Access Failed",
                   message: "Could not read clipboard content",
                 });
@@ -289,6 +297,7 @@ export default function CreateAgentRun() {
 
       <Form.Dropdown
         id="organizationId"
+        title="Organization"
         placeholder="Choose org"
         defaultValue={defaultOrgId || preferences.defaultOrganization}
         storeValue={true}

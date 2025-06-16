@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { showToast, Toast } from "@raycast/api";
+import { showToast, Toast_Style as Toast } from "../components/WebToast";
 import { AgentRunResponse, AgentRunFilters, SortOptions, AgentRunStatus } from "../api/types";
 import { getAgentRunCache } from "../storage/agentRunCache";
 import { getAPIClient } from "../api/client";
@@ -102,7 +102,7 @@ export function useCachedAgentRuns(): UseCachedAgentRunsResult {
         
         if (showSuccessToast) {
           await showToast({
-            style: Toast.Style.Success,
+            style: Toast.Success,
             title: "Agent Runs Updated",
             message: `Loaded ${updatedRuns.length} agent runs`,
           });
@@ -110,7 +110,7 @@ export function useCachedAgentRuns(): UseCachedAgentRunsResult {
       } else if (syncResult.error) {
         setError(syncResult.error);
         await showToast({
-          style: Toast.Style.Failure,
+          style: Toast.Failure,
           title: "Sync Failed",
           message: syncResult.error,
         });
@@ -121,7 +121,7 @@ export function useCachedAgentRuns(): UseCachedAgentRunsResult {
       setSyncStatus(SyncStatus.ERROR);
       
       await showToast({
-        style: Toast.Style.Failure,
+        style: Toast.Failure,
         title: "Sync Error",
         message: errorMessage,
       });
@@ -235,4 +235,3 @@ export function useCachedAgentRuns(): UseCachedAgentRunsResult {
     setOrganizationId,
   };
 }
-

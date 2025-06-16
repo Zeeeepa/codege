@@ -1,4 +1,5 @@
-import { showToast, Toast, LocalStorage } from "@raycast/api";
+import { showToast, Toast_Style as Toast } from "../components/WebToast";
+import { LocalStorage } from "../utils/webStorage";
 import { getCredentials, showCredentialsError, validateCredentials } from "../utils/credentials";
 import { clearStoredUserInfo } from "../storage/userStorage";
 import { API_ENDPOINTS, DEFAULT_API_BASE_URL } from "./constants";
@@ -82,7 +83,7 @@ export class CodegenAPIClient {
 
     if (response.status === 429) {
       await showToast({
-        style: Toast.Style.Failure,
+        style: Toast.Failure,
         title: "Rate Limit Exceeded",
         message: "Please wait a moment before trying again.",
       });
@@ -90,7 +91,7 @@ export class CodegenAPIClient {
     }
 
     await showToast({
-      style: Toast.Style.Failure,
+      style: Toast.Failure,
       title: "API Error",
       message: errorMessage,
     });

@@ -1,4 +1,5 @@
-import { Cache, LocalStorage } from "@raycast/api";
+import { LocalStorage } from "../utils/webStorage";
+import { Cache } from "../utils/webCache";
 import { AgentRunResponse, AgentRunStatus, TrackedAgentRun, AgentRunStatusChange } from "../api/types";
 import { getAPIClient } from "../api/client";
 import {
@@ -33,7 +34,7 @@ export class AgentRunCache {
    */
   async getAgentRuns(organizationId: number): Promise<AgentRunResponse[]> {
     const cacheKey = this.getOrgCacheKey(organizationId);
-    const cached = this.cache.get(cacheKey);
+    const cached = await this.cache.get(cacheKey);
     
     if (!cached) {
       return [];
@@ -263,7 +264,7 @@ export class AgentRunCache {
     const trackedRuns: TrackedAgentRun[] = [];
 
     for (const key of keys) {
-      const cached = this.cache.get(key);
+      const cached = await this.cache.get(key);
       if (cached) {
         try {
           const entry: TrackedAgentRunCacheEntry = JSON.parse(cached);
@@ -342,7 +343,7 @@ export class AgentRunCache {
    */
   private async updateTrackedRunStatus(organizationId: number, agentRunId: number, newStatus: string | null): Promise<void> {
     const key = this.getTrackedRunKey(organizationId, agentRunId);
-    const cached = this.cache.get(key);
+    const cached = await this.cache.get(key);
     
     if (cached) {
       try {

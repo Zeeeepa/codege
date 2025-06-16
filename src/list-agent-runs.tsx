@@ -1,22 +1,35 @@
 import { useState } from "react";
 import {
   List,
+  ListItem as List_Item,
+  ListSection as List_Section,
+  ListEmptyView as List_EmptyView,
+} from "./components/WebList";
+import {
   ActionPanel,
   Action,
-  Icon,
-  Color,
-  showToast,
-  Toast,
-  confirmAlert,
-  Alert,
-  Clipboard,
-} from "@raycast/api";
+  OpenAction,
+  CopyAction,
+} from "./components/WebActionPanel";
+import { showToast, Toast_Style as Toast } from "./components/WebToast";
+import { confirmAlert, Alert } from "./components/WebAlert";
+import { Clipboard } from "./utils/webClipboard";
 import { useCachedAgentRuns } from "./hooks/useCachedAgentRuns";
 import { getAPIClient } from "./api/client";
 import { getAgentRunCache } from "./storage/agentRunCache";
 import { AgentRunStatus, AgentRunFilters } from "./api/types";
 import { getDateRanges, getStatusFilterOptions, hasActiveFilters, clearFilters } from "./utils/filtering";
 import { SyncStatus } from "./storage/cacheTypes";
+
+// Color constants for web UI
+const Color = {
+  Blue: '#007AFF',
+  Green: '#34C759',
+  Red: '#FF3B30',
+  Orange: '#FF9500',
+  Yellow: '#FFCC00',
+  SecondaryText: '#8E8E93'
+};
 
 export default function ListAgentRuns() {
   const {
@@ -48,23 +61,23 @@ export default function ListAgentRuns() {
   const getStatusDisplay = (status: string) => {
     switch (status) {
       case AgentRunStatus.ACTIVE:
-        return { icon: Icon.Clock, color: Color.Blue };
+        return { color: Color.Blue };
       case AgentRunStatus.COMPLETE:
-        return { icon: Icon.CheckRosette, color: Color.Green };
+        return { color: Color.Green };
       case AgentRunStatus.ERROR:
-        return { icon: Icon.XMarkCircle, color: Color.Red };
+        return { color: Color.Red };
       case AgentRunStatus.CANCELLED:
-        return { icon: Icon.Stop, color: Color.Orange };
+        return { color: Color.Orange };
       case AgentRunStatus.EVALUATION:
-        return { icon: Icon.Hourglass, color: Color.Yellow };
+        return { color: Color.Yellow };
       case AgentRunStatus.TIMEOUT:
-        return { icon: Icon.Clock, color: Color.Red };
+        return { color: Color.Red };
       case AgentRunStatus.MAX_ITERATIONS_REACHED:
-        return { icon: Icon.ArrowClockwise, color: Color.Red };
+        return { color: Color.Red };
       case AgentRunStatus.OUT_OF_TOKENS:
-        return { icon: Icon.Coins, color: Color.Red };
+        return { color: Color.Red };
       default:
-        return { icon: Icon.QuestionMark, color: Color.SecondaryText };
+        return { color: Color.SecondaryText };
     }
   };
 
@@ -92,10 +105,8 @@ export default function ListAgentRuns() {
     const confirmed = await confirmAlert({
       title: "Stop Agent Run",
       message: `Are you sure you want to stop agent run #${agentRunId}?`,
-      primaryAction: {
-        title: "Stop",
-        style: Alert.ActionStyle.Destructive,
-      },
+      confirmTitle: "Stop",
+      cancelTitle: "Cancel",
     });
 
     if (!confirmed) return;
@@ -104,7 +115,7 @@ export default function ListAgentRuns() {
       await apiClient.stopAgentRun(organizationId, { agent_run_id: agentRunId });
       
       await showToast({
-        style: Toast.Style.Success,
+        style: Toast.Success,
         title: "Agent Run Stopped",
         message: `Agent run #${agentRunId} has been stopped`,
       });
@@ -113,7 +124,7 @@ export default function ListAgentRuns() {
       await refresh();
     } catch (error) {
       await showToast({
-        style: Toast.Style.Failure,
+        style: Toast.Failure,
         title: "Failed to Stop Agent Run",
         message: error instanceof Error ? error.message : "Unknown error",
       });
@@ -133,7 +144,7 @@ export default function ListAgentRuns() {
       });
 
       await showToast({
-        style: Toast.Style.Success,
+        style: Toast.Success,
         title: "Agent Run Resumed",
         message: `Agent run #${agentRunId} has been resumed`,
       });
@@ -141,7 +152,7 @@ export default function ListAgentRuns() {
       await refresh();
     } catch (error) {
       await showToast({
-        style: Toast.Style.Failure,
+        style: Toast.Failure,
         title: "Failed to Resume Agent Run",
         message: error instanceof Error ? error.message : "Unknown error",
       });
@@ -189,7 +200,7 @@ export default function ListAgentRuns() {
         : "Copy an agent run ID or Codegen URL to your clipboard first, then try again.";
 
       await showToast({
-        style: suggestedInput ? Toast.Style.Success : Toast.Style.Failure,
+        style: suggestedInput ? Toast.Success : Toast.Failure,
         title: suggestedInput ? `Add Agent Run #${suggestedInput}?` : "Copy Agent Run ID First",
         message: instructions,
       });
@@ -200,7 +211,7 @@ export default function ListAgentRuns() {
       const agentRunId = parseInt(suggestedInput, 10);
 
       await showToast({
-        style: Toast.Style.Animated,
+        style: Toast.Animated,
         title: "Adding Agent Run",
         message: `Fetching details for agent run #${agentRunId}...`,
       });
@@ -213,7 +224,7 @@ export default function ListAgentRuns() {
       await cache.addToTracking(organizationId, agentRun);
 
       await showToast({
-        style: Toast.Style.Success,
+        style: Toast.Success,
         title: "Agent Run Added",
         message: `Now monitoring agent run #${agentRunId} - you'll get notifications for status changes`,
       });
@@ -223,7 +234,7 @@ export default function ListAgentRuns() {
 
     } catch (error) {
       await showToast({
-        style: Toast.Style.Failure,
+        style: Toast.Failure,
         title: "Failed to Add Agent Run",
         message: error instanceof Error ? error.message : "Could not fetch or add the agent run",
       });
@@ -237,10 +248,8 @@ export default function ListAgentRuns() {
     const confirmed = await confirmAlert({
       title: "Delete Agent Run",
       message: `Are you sure you want to delete agent run #${agentRunId}? This will remove it from your local cache.`,
-      primaryAction: {
-        title: "Delete",
-        style: Alert.ActionStyle.Destructive,
-      },
+      confirmTitle: "Delete",
+      cancelTitle: "Cancel",
     });
 
     if (!confirmed) return;
@@ -250,7 +259,7 @@ export default function ListAgentRuns() {
       await cache.removeAgentRun(organizationId, agentRunId);
       
       await showToast({
-        style: Toast.Style.Success,
+        style: Toast.Success,
         title: "Agent Run Deleted",
         message: `Agent run #${agentRunId} has been removed`,
       });
@@ -259,7 +268,7 @@ export default function ListAgentRuns() {
       await refresh();
     } catch (error) {
       await showToast({
-        style: Toast.Style.Failure,
+        style: Toast.Failure,
         title: "Failed to Delete Agent Run",
         message: error instanceof Error ? error.message : "Unknown error",
       });
@@ -289,11 +298,11 @@ export default function ListAgentRuns() {
   const getSyncStatusAccessory = () => {
     switch (syncStatus) {
       case SyncStatus.SYNCING:
-        return { icon: Icon.ArrowClockwise, tooltip: "Syncing..." };
+        return { tooltip: "Syncing..." };
       case SyncStatus.ERROR:
-        return { icon: Icon.ExclamationMark, tooltip: "Sync failed" };
+        return { tooltip: "Sync failed" };
       case SyncStatus.SUCCESS:
-        return { icon: Icon.CheckCircle, tooltip: "Synced" };
+        return { tooltip: "Synced" };
       default:
         return undefined;
     }
@@ -302,8 +311,8 @@ export default function ListAgentRuns() {
   if (error && !isLoading) {
     return (
       <List>
-        <List.EmptyView
-          icon={Icon.ExclamationMark}
+        <List_EmptyView
+          
           title="Error Loading Agent Runs"
           description={error}
           actions={
@@ -322,35 +331,10 @@ export default function ListAgentRuns() {
       searchText={searchText}
       onSearchTextChange={handleSearchTextChange}
       searchBarPlaceholder="Search agent runs..."
-      searchBarAccessory={
-        <List.Dropdown
-          tooltip="Filter by Status"
-          placeholder="All Statuses"
-          onChange={(value) => {
-            if (value === "all") {
-              updateFilters({ ...filters, status: undefined });
-            } else {
-              filterByStatus(value as AgentRunStatus);
-            }
-          }}
-        >
-          <List.Dropdown.Item title="All Statuses" value="all" />
-          <List.Dropdown.Section title="Status">
-            {Object.values(AgentRunStatus).map((status) => (
-              <List.Dropdown.Item
-                key={status}
-                title={status}
-                value={status}
-                icon={getStatusDisplay(status).icon}
-              />
-            ))}
-          </List.Dropdown.Section>
-        </List.Dropdown>
-      }
     >
       {filteredRuns.length === 0 && !isLoading ? (
-        <List.EmptyView
-          icon={Icon.Rocket}
+        <List_EmptyView
+          
           title={hasActiveFilters(filters) ? "No Matching Agent Runs" : "No Agent Runs"}
           description={
             hasActiveFilters(filters)
@@ -361,23 +345,25 @@ export default function ListAgentRuns() {
             <ActionPanel>
               <Action
                 title="Add Agent Run to Monitor"
-                icon={Icon.Binoculars}
+                
                 onAction={addAgentRunToMonitor}
                 shortcut={{ modifiers: ["cmd"], key: "m" }}
               />
-              <Action.Push
+              <Action
                 title="Create Agent Run"
-                icon={Icon.Plus}
-                target={<div>Create Agent Run Form</div>} // This would be the actual create form
+                onAction={() => {
+                  // Navigate to create form
+                  console.log("Navigate to create agent run");
+                }}
               />
               {hasActiveFilters(filters) && (
                 <Action
                   title="Clear Filters"
-                  icon={Icon.Trash}
+                  
                   onAction={handleClearFilters}
                 />
               )}
-              <Action title="Refresh" icon={Icon.ArrowClockwise} onAction={refresh} />
+              <Action title="Refresh"  onAction={refresh} />
             </ActionPanel>
           }
         />
@@ -388,41 +374,39 @@ export default function ListAgentRuns() {
           const canResume = run.status === AgentRunStatus.PAUSED;
 
           return (
-            <List.Item
+            <List_Item
               key={run.id}
               title={`Agent Run #${run.id}`}
               subtitle={`Created ${formatDate(run.created_at)}`}
-              icon={{ source: statusDisplay.icon, tintColor: statusDisplay.color }}
+              icon="🔄"
               accessories={[
                 { text: run.status },
               ]}
               actions={
                 <ActionPanel>
-                  <ActionPanel.Section>
+                  
                     <Action
                       title="Add Agent Run to Monitor"
-                      icon={Icon.Binoculars}
+                      
                       onAction={addAgentRunToMonitor}
                       shortcut={{ modifiers: ["cmd"], key: "m" }}
                     />
-                    <Action.OpenInBrowser
+                    <OpenAction
                       title="Open in Browser"
-                      url={run.web_url}
-                      icon={Icon.Globe}
+                      target={run.web_url}
                     />
-                    <Action.CopyToClipboard
+                    <CopyAction
                       title="Copy Web URL"
                       content={run.web_url}
-                      shortcut={{ modifiers: ["cmd"], key: "c" }}
                     />
-                  </ActionPanel.Section>
+                  
 
-                  <ActionPanel.Section>
+                  
                     {canStop && (
                       <Action
                         title="Stop Agent Run"
-                        icon={Icon.Stop}
-                        style={Action.Style.Destructive}
+                        
+                        style="destructive"
                         onAction={() => stopAgentRun(run.id)}
                         shortcut={{ modifiers: ["cmd"], key: "s" }}
                       />
@@ -430,35 +414,35 @@ export default function ListAgentRuns() {
                     {canResume && (
                       <Action
                         title="Resume Agent Run"
-                        icon={Icon.Play}
+                        
                         onAction={() => resumeAgentRun(run.id)}
                         shortcut={{ modifiers: ["cmd"], key: "r" }}
                       />
                     )}
-                  </ActionPanel.Section>
+                  
 
-                  <ActionPanel.Section>
+                  
                     <Action
                       title="Refresh"
-                      icon={Icon.ArrowClockwise}
+                      
                       onAction={refresh}
                       shortcut={{ modifiers: ["cmd"], key: "r" }}
                     />
                     {hasActiveFilters(filters) && (
                       <Action
                         title="Clear Filters"
-                        icon={Icon.Trash}
+                        
                         onAction={handleClearFilters}
                       />
                     )}
                     <Action
                       title="Delete Agent Run"
-                      icon={Icon.Trash}
-                      style={Action.Style.Destructive}
+                      
+                      style="destructive"
                       onAction={() => deleteAgentRun(run.id)}
                       shortcut={{ modifiers: ["cmd", "shift"], key: "delete" }}
                     />
-                  </ActionPanel.Section>
+                  
                 </ActionPanel>
               }
             />

@@ -1,4 +1,4 @@
-import { LocalStorage } from "@raycast/api";
+import { LocalStorage } from "./webStorage";
 import { getAPIClient } from "../api/client";
 import { UserResponse } from "../api/types";
 
@@ -179,4 +179,4 @@ export async function getCurrentUserFirstName(organizationId?: number, userId?: 
   }
   
   return service.getFirstName(profile);
-} 
+}
