@@ -107,13 +107,13 @@ if (typeof window !== 'undefined') {
       
       switch (type) {
         case 'push':
-          globalNavigate(path, options);
+          (globalNavigate as any)(path, options);
           break;
         case 'replace':
-          globalNavigate(path, { ...options, replace: true });
+          (globalNavigate as any)(path, { ...options, replace: true });
           break;
         case 'pop':
-          globalNavigate(-1);
+          (globalNavigate as any)(-1);
           break;
       }
     }
@@ -121,4 +121,3 @@ if (typeof window !== 'undefined') {
 }
 
 export default useNavigation;
-

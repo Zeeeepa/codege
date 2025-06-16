@@ -21,7 +21,7 @@ interface ToastContextType {
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 // Toast Provider Component
-export function ToastProvider({ children }: { children: ReactNode }) {
+function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const showToast = useCallback((toast: Omit<Toast, 'id'>) => {
@@ -166,4 +166,3 @@ export const Toast_Style = {
 };
 
 export { ToastProvider, Toast_Style as Toast };
-

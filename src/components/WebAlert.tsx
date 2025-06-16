@@ -38,7 +38,7 @@ interface AlertState {
 }
 
 // Alert Provider Component
-export function AlertProvider({ children }: { children: ReactNode }) {
+function AlertProvider({ children }: { children: ReactNode }) {
   const [alertState, setAlertState] = useState<AlertState>({
     isVisible: false,
     options: null,
@@ -234,4 +234,3 @@ export const Alert = {
 };
 
 export { AlertProvider };
-

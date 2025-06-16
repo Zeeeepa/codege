@@ -4,6 +4,9 @@ export interface FormProps {
   children: ReactNode;
   onSubmit?: (values: any) => void;
   className?: string;
+  navigationTitle?: string;
+  actions?: ReactNode;
+  isLoading?: boolean;
 }
 
 export interface FormItemProps {
@@ -27,12 +30,18 @@ export interface FormTextAreaProps extends FormItemProps {
 
 export interface FormDropdownProps extends FormItemProps {
   children: ReactNode;
+  defaultValue?: string;
+  storeValue?: boolean;
 }
 
-export interface FormCheckboxProps extends FormItemProps {
+export interface FormCheckboxProps {
+  id?: string;
+  title: string;
   label: string;
   value?: boolean;
   onChange?: (value: boolean) => void;
+  error?: string;
+  info?: string;
 }
 
 export interface DropdownItemProps {
@@ -41,8 +50,13 @@ export interface DropdownItemProps {
   icon?: string;
 }
 
+export interface FormDescriptionProps {
+  title?: string;
+  text: string;
+}
+
 // Main Form Component
-export function Form({ children, onSubmit, className = '' }: FormProps) {
+export function Form({ children, onSubmit, className = '', navigationTitle, actions, isLoading }: FormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (onSubmit) {
@@ -53,11 +67,26 @@ export function Form({ children, onSubmit, className = '' }: FormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className={`web-form ${className}`}>
-      {children}
-    </form>
+    <div className={`web-form-container ${className}`}>
+      {navigationTitle && <h1 className="form-title">{navigationTitle}</h1>}
+      {isLoading && <div className="form-loading">Loading...</div>}
+      <form onSubmit={handleSubmit} className="web-form">
+        {children}
+      </form>
+      {actions && <div className="form-actions">{actions}</div>}
+    </div>
   );
 }
+
+// Add static properties to Form for dot notation access
+Form.Description = FormDescription;
+Form.TextArea = FormTextArea;
+Form.TextField = FormTextField;
+Form.Dropdown = FormDropdown;
+Form.Checkbox = FormCheckbox;
+
+// Add static properties to FormDropdown for dot notation access
+FormDropdown.Item = DropdownItem;
 
 // Form TextField Component
 export function FormTextField({ 
@@ -125,7 +154,10 @@ export function FormDropdown({
   onChange, 
   error, 
   info, 
-  children 
+  children,
+  defaultValue,
+  storeValue,
+  placeholder
 }: FormDropdownProps) {
   return (
     <div className="form-field">
@@ -134,9 +166,11 @@ export function FormDropdown({
         id={id}
         name={id}
         value={value}
+        defaultValue={defaultValue}
         onChange={(e) => onChange?.(e.target.value)}
         className={`form-select ${error ? 'error' : ''}`}
       >
+        {placeholder && <option value="">{placeholder}</option>}
         {children}
       </select>
       {info && <div className="form-info">{info}</div>}
@@ -179,6 +213,16 @@ export function FormCheckbox({
   );
 }
 
+// Form Description Component
+export function FormDescription({ title, text }: FormDescriptionProps) {
+  return (
+    <div className="form-description">
+      {title && <h3 className="form-description-title">{title}</h3>}
+      <p className="form-description-text">{text}</p>
+    </div>
+  );
+}
+
 // Export all components with Raycast-compatible names
 export {
   Form as default,
@@ -186,6 +230,6 @@ export {
   FormTextArea as Form_TextArea,
   FormDropdown as Form_Dropdown,
   FormCheckbox as Form_Checkbox,
+  FormDescription as Form_Description,
   DropdownItem as Dropdown_Item,
 };
-

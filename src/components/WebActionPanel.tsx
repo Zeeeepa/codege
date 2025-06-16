@@ -7,7 +7,7 @@ export interface ActionPanelProps {
 
 export interface ActionProps {
   title: string;
-  onAction?: () => void;
+  onAction?: () => void | Promise<void>;
   icon?: string;
   shortcut?: { modifiers: string[]; key: string };
   style?: 'default' | 'destructive';
@@ -52,7 +52,7 @@ export function ActionPanel({ children, title }: ActionPanelProps) {
 }
 
 // Action Component
-export function Action({ 
+function Action({ 
   title, 
   onAction, 
   icon, 
@@ -188,4 +188,3 @@ export {
   CopyAction as Copy_Action,
   OpenAction as Open_Action,
 };
-

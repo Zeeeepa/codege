@@ -1,4 +1,4 @@
-/// <reference types="@raycast/api">
+// Web environment type definitions
 
 /* 🚧 🚧 🚧
  * This file is auto-generated from the extension's manifest.
@@ -38,4 +38,3 @@ declare namespace Arguments {
   /** Arguments passed to the `list-organizations` command */
   export type ListOrganizations = {}
 }
-

@@ -99,6 +99,11 @@ class WebPreferences {
       CODEGEN_USER_ID: 'userId',
       CODEGEN_API_BASE_URL: 'apiBaseUrl',
       RAYCAST_CODEGEN_API_BASE_URL: 'apiBaseUrl', // Legacy support
+      // React environment variables
+      REACT_APP_CODEGEN_API_TOKEN: 'apiToken',
+      REACT_APP_CODEGEN_ORG_ID: 'defaultOrganization',
+      REACT_APP_CODEGEN_USER_ID: 'userId',
+      REACT_APP_CODEGEN_API_BASE_URL: 'apiBaseUrl',
     };
 
     // Try to get from process.env (Node.js/build time)
@@ -179,7 +184,7 @@ export function getPreferenceValues<T extends PreferenceValues = PreferenceValue
   
   // If no cached preferences, return defaults and trigger async load
   webPreferences.getPreferenceValues().catch(console.error);
-  return DEFAULT_PREFERENCES as T;
+  return DEFAULT_PREFERENCES as unknown as T;
 }
 
 // Export async version for better control
@@ -202,4 +207,3 @@ if (typeof window !== 'undefined') {
 }
 
 export default webPreferences;
-

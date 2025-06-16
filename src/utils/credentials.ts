@@ -258,7 +258,7 @@ export async function validateCredentials(): Promise<CredentialsValidationResult
  */
 export async function showCredentialsError(error: string) {
   await showToast({
-    style: Toast.Style.Failure,
+    style: Toast.Failure,
     title: "Authentication Error",
     message: error,
     primaryAction: {
