@@ -11,6 +11,7 @@ import {
   StopAgentRunRequest,
   PaginatedResponse,
   APIError,
+  LogEntry,
 } from "./types";
 
 export class CodegenAPIClient {
@@ -143,6 +144,27 @@ export class CodegenAPIClient {
         method: "POST",
         body: JSON.stringify(request),
       }
+    );
+  }
+
+  async listAgentRuns(
+    organizationId: number,
+    page = 1,
+    size = 10
+  ): Promise<PaginatedResponse<AgentRunResponse>> {
+    return this.makeRequest<PaginatedResponse<AgentRunResponse>>(
+      API_ENDPOINTS.AGENT_RUN_LIST(organizationId, page, size)
+    );
+  }
+
+  async getAgentRunLogs(
+    organizationId: number,
+    agentRunId: number,
+    page = 1,
+    size = 10
+  ): Promise<PaginatedResponse<LogEntry>> {
+    return this.makeRequest<PaginatedResponse<LogEntry>>(
+      API_ENDPOINTS.AGENT_RUN_LOGS(organizationId, agentRunId, page, size)
     );
   }
 

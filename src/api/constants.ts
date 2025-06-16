@@ -19,6 +19,10 @@ export const API_ENDPOINTS = {
     `/v1/organizations/${organizationId}/agent/run`,
   AGENT_RUN_GET: (organizationId: number, agentRunId: number) => 
     `/v1/organizations/${organizationId}/agent/run/${agentRunId}`,
+  AGENT_RUN_LIST: (organizationId: number, page: number, size: number) => 
+    `/v1/organizations/${organizationId}/agent/runs?page=${page}&size=${size}`,
+  AGENT_RUN_LOGS: (organizationId: number, agentRunId: number, page: number, size: number) => 
+    `/v1/organizations/${organizationId}/agent/run/${agentRunId}/logs?page=${page}&size=${size}`,
   AGENT_RUN_RESUME: (organizationId: number) => 
     `/v1/beta/organizations/${organizationId}/agent/run/resume`,
   AGENT_RUN_STOP: (organizationId: number) => 
@@ -26,4 +30,4 @@ export const API_ENDPOINTS = {
 } as const;
 
 // API Base URL fallback
-export const DEFAULT_API_BASE_URL = "https://api.codegen.com"; 
+export const DEFAULT_API_BASE_URL = "https://api.codegen.com";
