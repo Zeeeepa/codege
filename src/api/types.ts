@@ -133,3 +133,13 @@ export interface TrackedAgentRun {
   webUrl: string;
   addedAt: string; // When it was added to tracking
 }
+
+// Agent Run Log Entry
+export interface LogEntry {
+  id: number;
+  agent_run_id: number;
+  timestamp: string;
+  level: string;
+  message: string;
+  metadata?: Record<string, any>;
+}
