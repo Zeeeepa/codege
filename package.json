@@ -1,111 +1,46 @@
 {
-  "$schema": "https://www.raycast.com/schemas/extension.json",
-  "name": "codegen",
-  "title": "Codegen",
-  "description": "Create and manage AI agent runs directly from Raycast. Interact with the Codegen API to launch agents, monitor their progress, and view results.",
-  "icon": "icon.png",
-  "author": "codegen",
-  "categories": [
-    "Developer Tools",
-    "Productivity"
-  ],
-  "license": "MIT",
-  "commands": [
-    {
-      "name": "create-agent-run",
-      "title": "Create Agent Run",
-      "subtitle": "Codegen",
-      "description": "Create a new AI agent run with a custom prompt",
-      "mode": "view",
-      "keywords": [
-        "agent",
-        "ai",
-        "create",
-        "run",
-        "prompt"
-      ]
-    },
-    {
-      "name": "list-agent-runs",
-      "title": "Agent Runs",
-      "subtitle": "Codegen",
-      "description": "View and manage your agent runs with advanced filtering",
-      "mode": "view",
-      "keywords": [
-        "agent",
-        "runs",
-        "list",
-        "status",
-        "history"
-      ]
-    },
-    {
-      "name": "list-organizations",
-      "title": "Organizations",
-      "subtitle": "Codegen",
-      "description": "View and switch between your organizations",
-      "mode": "view",
-      "keywords": [
-        "organizations",
-        "orgs",
-        "switch",
-        "teams"
-      ]
-    }
-  ],
-  "preferences": [
-    {
-      "name": "apiToken",
-      "type": "password",
-      "required": true,
-      "title": "API Token",
-      "description": "Your Codegen API token. Get it from https://app.codegen.com/settings",
-      "placeholder": "Enter your API token"
-    },
-    {
-      "name": "defaultOrganization",
-      "type": "textfield",
-      "required": false,
-      "title": "Default Organization ID",
-      "description": "Default organization ID to use (optional)",
-      "placeholder": "123"
-    },
-    {
-      "name": "userId",
-      "type": "textfield",
-      "required": false,
-      "title": "User ID",
-      "description": "Your user ID for personalized features (optional)",
-      "placeholder": "456"
-    },
-    {
-      "name": "apiBaseUrl",
-      "type": "textfield",
-      "required": false,
-      "title": "API Base URL",
-      "description": "Custom API base URL (leave empty for default)",
-      "placeholder": "https://api.codegen.com"
-    }
-  ],
+  "name": "codegen-web",
+  "version": "1.0.0",
+  "description": "Codegen Web UI - AI Agent Management Platform",
+  "private": true,
   "dependencies": {
-    "@raycast/api": "^1.83.1",
-    "@raycast/utils": "^1.17.0",
-    "dotenv": "^16.5.0"
-  },
-  "devDependencies": {
-    "@raycast/eslint-config": "^2.0.0",
-    "@types/node": "20.19.0",
-    "@types/react": "^19.0.10",
-    "eslint": "^8.57.0",
-    "prettier": "^3.3.3",
-    "typescript": "^5.4.5"
+    "@types/node": "^16.18.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.8.0",
+    "react-scripts": "5.0.1",
+    "typescript": "^4.9.0",
+    "web-vitals": "^2.1.0"
   },
   "scripts": {
-    "build": "ray build -e dist",
-    "dev": "ray develop",
-    "fix-lint": "ray lint --fix",
-    "lint": "ray lint",
-    "prepublishOnly": "echo \"\\n\\nIt seems like you are trying to publish the Raycast extension to npm.\\n\\nIf you did intend to publish it to npm, remove the \\`prepublishOnly\\` script and rerun \\`npm publish\\` again.\\nIf you wanted to publish it to the Raycast Store instead, use \\`npm run publish\\` instead.\\n\\n\" && exit 1",
-    "publish": "npx @raycast/api@latest publish"
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "dev": "react-scripts start"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@types/jest": "^27.5.0"
   }
 }
+

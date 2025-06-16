@@ -1,4 +1,4 @@
-import { LocalStorage } from "@raycast/api";
+import { LocalStorage } from "../utils/webStorage";
 import { UserResponse } from "../api/types";
 
 export interface StoredUserInfo extends UserResponse {
