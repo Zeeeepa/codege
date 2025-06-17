@@ -1,4 +1,4 @@
-import { AgentRunResponse, OrganizationResponse, UserResponse, TrackedAgentRun, AgentRunStatusChange } from "../api/types";
+import { AgentRunResponse, OrganizationResponse, UserResponse, TrackedAgentRun } from "../api/types";
 
 // Cache Keys
 export const CACHE_KEYS = {

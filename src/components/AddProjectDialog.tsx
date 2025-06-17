@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { getGitHubService } from '../services/github.service';
 import { getProjectService } from '../services/project.service';
 import { GitHubRepository } from '../types/github';
@@ -23,15 +23,7 @@ const AddProjectDialog: React.FC<AddProjectDialogProps> = ({ onClose, onProjectA
   const githubService = getGitHubService();
   const projectService = getProjectService();
 
-  useEffect(() => {
-    loadRepositories();
-  }, []);
-
-  useEffect(() => {
-    filterRepositories();
-  }, [searchQuery, repositories]);
-
-  const loadRepositories = async () => {
+  const loadRepositories = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -43,9 +35,9 @@ const AddProjectDialog: React.FC<AddProjectDialogProps> = ({ onClose, onProjectA
     } finally {
       setLoading(false);
     }
-  };
+  }, [githubService]);
 
-  const filterRepositories = () => {
+  const filterRepositories = useCallback(() => {
     if (!searchQuery.trim()) {
       setFilteredRepositories(repositories);
       return;
@@ -59,7 +51,15 @@ const AddProjectDialog: React.FC<AddProjectDialogProps> = ({ onClose, onProjectA
     );
     
     setFilteredRepositories(filtered);
-  };
+  }, [searchQuery, repositories]);
+
+  useEffect(() => {
+    loadRepositories();
+  }, [loadRepositories]);
+
+  useEffect(() => {
+    filterRepositories();
+  }, [filterRepositories]);
 
   const handleRepositorySelect = (repository: GitHubRepository) => {
     setSelectedRepository(repository);

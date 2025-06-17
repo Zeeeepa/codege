@@ -1,7 +1,7 @@
 import { getPreferenceValues } from "./webPreferences";
 import { showToast, Toast_Style as Toast } from "../components/WebToast";
 import { LocalStorage } from "./webStorage";
-import { getUserProfileService } from "./userProfile";
+
 import { storeUserInfo, clearStoredUserInfo, isStoredUserInfoValid, getStoredUserInfo } from "../storage/userStorage";
 import { UserResponse } from "../api/types";
 import { API_ENDPOINTS, DEFAULT_API_BASE_URL } from "../api/constants";

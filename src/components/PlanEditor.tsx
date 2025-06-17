@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getProjectService } from '../services/project.service';
-import { Requirement, Plan, ImplementationStatus } from '../types/project';
+import { Requirement, ImplementationStatus } from '../types/project';
 import { showToast, Toast_Style as Toast } from './WebToast';
 import { showAlert } from './WebAlert';
 
@@ -13,7 +13,7 @@ interface PlanEditorProps {
 const PlanEditor: React.FC<PlanEditorProps> = ({ requirement, onClose, onPlanUpdated }) => {
   const [planContent, setPlanContent] = useState('');
   const [originalContent, setOriginalContent] = useState('');
-  const [loading, setLoading] = useState(false);
+
   const [saving, setSaving] = useState(false);
   const [implementing, setImplementing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -310,4 +310,3 @@ const PlanEditor: React.FC<PlanEditorProps> = ({ requirement, onClose, onPlanUpd
 };
 
 export default PlanEditor;
-
