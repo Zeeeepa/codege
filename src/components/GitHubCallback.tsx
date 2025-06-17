@@ -8,6 +8,8 @@ const GitHubCallback: React.FC = () => {
   const navigate = useNavigate();
   const [processing, setProcessing] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const maxRetries = 2;
 
   const githubService = getGitHubService();
 
@@ -49,7 +51,7 @@ const GitHubCallback: React.FC = () => {
         // Notify parent window if this is a popup
         if (window.opener) {
           window.opener.postMessage({ type: 'github-auth-success' }, '*');
-          window.close();
+          setTimeout(() => window.close(), 1000);
         } else {
           // Redirect to projects page
           navigate('/projects');
@@ -76,24 +78,39 @@ const GitHubCallback: React.FC = () => {
       
       setError(errorMessage);
       
+      // Show toast notification
       await showToast({
         style: Toast.Failure,
         title: 'GitHub Authentication Failed',
         message: errorMessage,
       });
 
-      // Redirect to projects page after a delay
-      setTimeout(() => {
-        if (window.opener) {
-          window.close();
-        } else {
-          navigate('/projects');
-        }
-      }, 5000);
+      // If we haven't exceeded max retries, try again
+      if (retryCount < maxRetries) {
+        console.log(`Retrying GitHub authentication (attempt ${retryCount + 1} of ${maxRetries})...`);
+        setRetryCount(prev => prev + 1);
+        // Wait a moment before retrying
+        setTimeout(() => {
+          setProcessing(true);
+          setError(null);
+          handleCallback();
+        }, 2000);
+      } else {
+        // Redirect to projects page after a delay if max retries exceeded
+        setTimeout(() => {
+          if (window.opener) {
+            window.close();
+          } else {
+            navigate('/projects');
+          }
+        }, 5000);
+      }
     } finally {
-      setProcessing(false);
+      if (retryCount >= maxRetries || !error) {
+        setProcessing(false);
+      }
     }
-  }, [searchParams, githubService, navigate]);
+  }, [searchParams, githubService, navigate, retryCount, error]);
 
   useEffect(() => {
     handleCallback();
@@ -131,13 +148,91 @@ const GitHubCallback: React.FC = () => {
             }}></div>
             <h2 style={{ fontSize: '24px', marginBottom: '16px', color: '#e0e0e0' }}>Connecting to GitHub...</h2>
             <p style={{ color: '#a0a0a0' }}>Please wait while we complete the authentication process.</p>
+            {retryCount > 0 && (
+              <p style={{ color: '#a0a0a0', marginTop: '10px' }}>
+                Retry attempt {retryCount} of {maxRetries}...
+              </p>
+            )}
           </div>
         ) : error ? (
           <div className="error-state">
             <div className="error-icon" style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
             <h2 style={{ fontSize: '24px', marginBottom: '16px', color: '#e74c3c' }}>Authentication Failed</h2>
             <p style={{ color: '#a0a0a0', marginBottom: '16px' }}>{error}</p>
-            <p style={{ color: '#707070', fontSize: '14px' }}>This window will close automatically in a few seconds.</p>
+            
+            {retryCount < maxRetries ? (
+              <button 
+                onClick={() => {
+                  setProcessing(true);
+                  setError(null);
+                  setRetryCount(prev => prev + 1);
+                  // Get the current URL parameters
+                  const code = searchParams.get('code');
+                  const state = searchParams.get('state');
+                  if (code && state) {
+                    githubService.handleOAuthCallback(code, state)
+                      .then(success => {
+                        if (success) {
+                          if (window.opener) {
+                            window.opener.postMessage({ type: 'github-auth-success' }, '*');
+                            setTimeout(() => window.close(), 1000);
+                          } else {
+                            navigate('/projects');
+                          }
+                        } else {
+                          throw new Error('Authentication failed on manual retry');
+                        }
+                      })
+                      .catch(err => {
+                        console.error('Manual retry failed:', err);
+                        setError(err instanceof Error ? err.message : 'Retry failed');
+                        setProcessing(false);
+                      });
+                  } else {
+                    setError('Missing code or state parameters for retry');
+                    setProcessing(false);
+                  }
+                }}
+                style={{
+                  backgroundColor: '#2563eb',
+                  color: 'white',
+                  border: 'none',
+                  padding: '10px 20px',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  marginBottom: '16px'
+                }}
+              >
+                Try Again
+              </button>
+            ) : (
+              <p style={{ color: '#707070', fontSize: '14px' }}>
+                Maximum retry attempts reached. This window will close automatically in a few seconds.
+              </p>
+            )}
+            
+            <button 
+              onClick={() => {
+                if (window.opener) {
+                  window.close();
+                } else {
+                  navigate('/projects');
+                }
+              }}
+              style={{
+                backgroundColor: 'transparent',
+                color: '#a0a0a0',
+                border: '1px solid #333333',
+                padding: '8px 16px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                marginTop: '10px'
+              }}
+            >
+              {window.opener ? 'Close Window' : 'Return to Projects'}
+            </button>
           </div>
         ) : (
           <div className="success-state">
@@ -145,6 +240,28 @@ const GitHubCallback: React.FC = () => {
             <h2 style={{ fontSize: '24px', marginBottom: '16px', color: '#2ecc71' }}>Successfully Connected!</h2>
             <p style={{ color: '#a0a0a0', marginBottom: '16px' }}>Your GitHub account has been connected successfully.</p>
             <p style={{ color: '#707070', fontSize: '14px' }}>You can now close this window and return to the application.</p>
+            
+            <button 
+              onClick={() => {
+                if (window.opener) {
+                  window.close();
+                } else {
+                  navigate('/projects');
+                }
+              }}
+              style={{
+                backgroundColor: '#2ecc71',
+                color: 'white',
+                border: 'none',
+                padding: '10px 20px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                marginTop: '20px'
+              }}
+            >
+              {window.opener ? 'Close Window' : 'Go to Projects'}
+            </button>
           </div>
         )}
       </div>
