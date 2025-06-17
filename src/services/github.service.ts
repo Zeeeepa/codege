@@ -131,13 +131,28 @@ export class GitHubService {
       });
 
       if (!tokenResponse.ok) {
-        throw new Error('Failed to exchange code for token');
+        const errorText = await tokenResponse.text();
+        console.error('Token exchange failed:', {
+          status: tokenResponse.status,
+          statusText: tokenResponse.statusText,
+          responseText: errorText
+        });
+        throw new Error(`Failed to exchange code for token: ${tokenResponse.status} ${tokenResponse.statusText}`);
       }
 
-      const tokenData: GitHubOAuthToken = await tokenResponse.json();
+      let tokenData: GitHubOAuthToken;
+      try {
+        const responseText = await tokenResponse.text();
+        console.log('Token response text:', responseText);
+        tokenData = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Failed to parse token response:', parseError);
+        throw new Error('Invalid response format from GitHub OAuth server');
+      }
       
       if (!tokenData.access_token) {
-        throw new Error('No access token received');
+        console.error('No access token in response:', tokenData);
+        throw new Error('No access token received from GitHub');
       }
 
       // Initialize Octokit with the new token
@@ -164,10 +179,25 @@ export class GitHubService {
       return true;
     } catch (error) {
       console.error('OAuth callback error:', error);
+      
+      // Provide more detailed error message
+      let errorMessage = 'Unknown error occurred';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      } else if (error && typeof error === 'object') {
+        try {
+          errorMessage = JSON.stringify(error);
+        } catch (e) {
+          errorMessage = 'Error object could not be stringified';
+        }
+      }
+      
       await showToast({
         style: Toast.Failure,
         title: 'GitHub Connection Failed',
-        message: error instanceof Error ? error.message : 'Unknown error occurred',
+        message: errorMessage,
       });
       return false;
     }
