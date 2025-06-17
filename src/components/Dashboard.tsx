@@ -8,8 +8,7 @@ import Sidebar from './Sidebar';
 import ErrorBoundary from './ErrorBoundary';
 import { 
   DashboardSection, 
-  DashboardProps, 
-  DashboardState,
+  DashboardSectionEnum,
   UserInfo,
   Organization,
   AgentRun
@@ -31,15 +30,40 @@ const LoadingComponent = () => (
   </div>
 );
 
+// Define DashboardProps interface
+interface DashboardProps {
+  initialSection?: DashboardSection;
+}
+
+// Define DashboardState interface
+interface DashboardState {
+  activeSection: DashboardSection;
+  userInfo: UserInfo | null;
+  organizations: Organization[];
+  agentRuns: AgentRun[];
+  githubConnected: boolean;
+  error: string | null;
+  isLoading: boolean;
+  stats: {
+    totalRuns: number;
+    totalProjects: number;
+    totalOrganizations: number;
+  };
+  recentRuns: AgentRun[];
+  recentProjects: any[]; // Using any for now
+  runs: AgentRun[];
+  projects: any[]; // Using any for now
+}
+
 const Dashboard: React.FC<DashboardProps> = ({ initialSection }) => {
   const [state, setState] = useState<DashboardState>({
-    activeSection: initialSection || DashboardSection.OVERVIEW,
-    isLoading: true,
+    activeSection: initialSection || 'dashboard',
     userInfo: null,
     organizations: [],
     agentRuns: [],
     githubConnected: false,
     error: null,
+    isLoading: true,
     stats: {
       totalRuns: 0,
       totalProjects: 0,
@@ -48,8 +72,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialSection }) => {
     recentRuns: [],
     recentProjects: [],
     runs: [],
-    projects: [],
-    organizations: []
+    projects: []
   });
   
   const navigate = useNavigate();
@@ -84,18 +107,18 @@ const Dashboard: React.FC<DashboardProps> = ({ initialSection }) => {
         
         // Set active section based on URL path
         const path = location.pathname;
-        let activeSection = DashboardSection.OVERVIEW;
+        let activeSection: DashboardSection = 'dashboard';
         
         if (path.includes('agent-runs')) {
-          activeSection = DashboardSection.AGENT_RUNS;
+          activeSection = DashboardSectionEnum.AGENT_RUNS;
         } else if (path.includes('create')) {
-          activeSection = DashboardSection.CREATE_RUN;
+          activeSection = DashboardSectionEnum.CREATE_RUN;
         } else if (path.includes('organizations')) {
-          activeSection = DashboardSection.ORGANIZATIONS;
+          activeSection = DashboardSectionEnum.ORGANIZATIONS;
         } else if (path.includes('projects')) {
-          activeSection = DashboardSection.PROJECTS;
+          activeSection = DashboardSectionEnum.PROJECTS;
         } else if (path.includes('settings')) {
-          activeSection = DashboardSection.SETTINGS;
+          activeSection = DashboardSectionEnum.SETTINGS;
         }
         
         updateState({ activeSection });
@@ -123,19 +146,19 @@ const Dashboard: React.FC<DashboardProps> = ({ initialSection }) => {
     
     // Update URL to match section
     switch (section) {
-      case DashboardSection.AGENT_RUNS:
+      case DashboardSectionEnum.AGENT_RUNS:
         navigate('/agent-runs');
         break;
-      case DashboardSection.CREATE_RUN:
+      case DashboardSectionEnum.CREATE_RUN:
         navigate('/create');
         break;
-      case DashboardSection.ORGANIZATIONS:
+      case DashboardSectionEnum.ORGANIZATIONS:
         navigate('/organizations');
         break;
-      case DashboardSection.PROJECTS:
+      case DashboardSectionEnum.PROJECTS:
         navigate('/projects');
         break;
-      case DashboardSection.SETTINGS:
+      case DashboardSectionEnum.SETTINGS:
         navigate('/settings');
         break;
       default:

@@ -1,5 +1,13 @@
 import React from 'react';
-import { DashboardSection, SidebarProps, NavItem, UserInfo } from '../types/dashboard';
+import { DashboardSection, DashboardSectionEnum, SidebarProps, UserInfo } from '../types/dashboard';
+
+// Define NavItem interface
+interface NavItem {
+  id: DashboardSection;
+  label: string;
+  icon: string;
+  description: string;
+}
 
 const Sidebar: React.FC<SidebarProps> = ({ 
   activeSection, 
@@ -12,8 +20,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     if (isLoading) return 'Loading...';
     if (!userInfo) return 'Guest User';
     
-    return userInfo.full_name || 
-           (userInfo.github_username ? `@${userInfo.github_username}` : undefined) ||
+    return userInfo.name || 
            userInfo.email ||
            `User ${userInfo.id}`;
   };
@@ -21,37 +28,37 @@ const Sidebar: React.FC<SidebarProps> = ({
   // Navigation items
   const navItems: NavItem[] = [
     {
-      id: DashboardSection.OVERVIEW,
+      id: DashboardSectionEnum.OVERVIEW,
       label: 'Overview',
       icon: '📊',
       description: 'Dashboard overview and statistics'
     },
     {
-      id: DashboardSection.AGENT_RUNS,
+      id: DashboardSectionEnum.AGENT_RUNS,
       label: 'Agent Runs',
       icon: '🤖',
       description: 'View and manage agent runs'
     },
     {
-      id: DashboardSection.CREATE_RUN,
+      id: DashboardSectionEnum.CREATE_RUN,
       label: 'Create Run',
       icon: '➕',
       description: 'Create a new agent run'
     },
     {
-      id: DashboardSection.ORGANIZATIONS,
+      id: DashboardSectionEnum.ORGANIZATIONS,
       label: 'Organizations',
       icon: '🏢',
       description: 'Manage your organizations'
     },
     {
-      id: DashboardSection.PROJECTS,
+      id: DashboardSectionEnum.PROJECTS,
       label: 'Projects',
       icon: '📁',
       description: 'View and manage projects'
     },
     {
-      id: DashboardSection.SETTINGS,
+      id: DashboardSectionEnum.SETTINGS,
       label: 'Settings',
       icon: '⚙️',
       description: 'Application settings and preferences'
