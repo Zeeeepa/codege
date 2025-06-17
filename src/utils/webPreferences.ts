@@ -1,223 +1,113 @@
 /**
- * Web-compatible preferences system that matches Raycast's getPreferenceValues API
+ * Web preferences utility for managing user preferences
  */
 
-import { LocalStorage } from "./webStorage";
+import { LocalStorage } from './webStorage';
 
-export interface PreferenceValues {
-  [key: string]: any;
-}
+// Storage key for preferences
+const PREFERENCES_STORAGE_KEY = 'codegen_preferences';
 
-const PREFERENCES_KEY = 'app_preferences';
-
-// Default preferences that can be overridden by environment variables or user settings
+// Default preferences
 const DEFAULT_PREFERENCES = {
-  apiToken: '',
-  defaultOrganization: '',
-  userId: '',
-  apiBaseUrl: 'https://api.codegen.com',
+  theme: 'dark',
+  enableNotifications: true,
+  enableAnalytics: true,
+  enableOfflineMode: false,
+  showHiddenFiles: false,
+  editorFontSize: 14,
+  editorTabSize: 2,
+  editorWordWrap: true,
 };
 
-class WebPreferences {
-  private cachedPreferences: PreferenceValues | null = null;
+// Preferences interface
+export interface UserPreferences {
+  theme: 'light' | 'dark' | 'system';
+  enableNotifications: boolean;
+  enableAnalytics: boolean;
+  enableOfflineMode: boolean;
+  showHiddenFiles: boolean;
+  editorFontSize: number;
+  editorTabSize: number;
+  editorWordWrap: boolean;
+}
 
-  /**
-   * Get preference values with environment variable and localStorage support
-   */
-  async getPreferenceValues<T extends PreferenceValues = PreferenceValues>(): Promise<T> {
-    if (this.cachedPreferences) {
-      return this.cachedPreferences as T;
+/**
+ * Get user preferences from localStorage
+ */
+export function getPreferenceValues(): UserPreferences {
+  try {
+    const storedPrefs = localStorage.getItem(PREFERENCES_STORAGE_KEY);
+    if (!storedPrefs) {
+      return DEFAULT_PREFERENCES;
     }
-
-    // Load from localStorage
-    const storedPreferences = await LocalStorage.getItem<PreferenceValues>(PREFERENCES_KEY) || {};
     
-    // Merge with defaults and environment variables
-    const preferences: PreferenceValues = {
+    const parsedPrefs = JSON.parse(storedPrefs);
+    return {
       ...DEFAULT_PREFERENCES,
-      ...storedPreferences,
+      ...parsedPrefs,
     };
-
-    // Override with environment variables if available
-    if (typeof window !== 'undefined') {
-      // Check for environment variables in various ways
-      const envVars = this.getEnvironmentVariables();
-      Object.assign(preferences, envVars);
-    }
-
-    this.cachedPreferences = preferences;
-    return preferences as T;
-  }
-
-  /**
-   * Set preference values
-   */
-  async setPreferenceValues(preferences: Partial<PreferenceValues>): Promise<void> {
-    const currentPreferences = await this.getPreferenceValues();
-    const updatedPreferences = { ...currentPreferences, ...preferences };
-    
-    await LocalStorage.setItem(PREFERENCES_KEY, JSON.stringify(updatedPreferences));
-    this.cachedPreferences = updatedPreferences;
-    
-    // Emit change event
-    this.emitPreferencesChange(updatedPreferences);
-  }
-
-  /**
-   * Get a specific preference value
-   */
-  async getPreference<T = any>(key: string, defaultValue?: T): Promise<T> {
-    const preferences = await this.getPreferenceValues();
-    return preferences[key] !== undefined ? preferences[key] : defaultValue;
-  }
-
-  /**
-   * Set a specific preference value
-   */
-  async setPreference(key: string, value: any): Promise<void> {
-    await this.setPreferenceValues({ [key]: value });
-  }
-
-  /**
-   * Clear all preferences
-   */
-  async clearPreferences(): Promise<void> {
-    await LocalStorage.removeItem(PREFERENCES_KEY);
-    this.cachedPreferences = null;
-  }
-
-  /**
-   * Get environment variables from various sources
-   */
-  private getEnvironmentVariables(): PreferenceValues {
-    const envVars: PreferenceValues = {};
-
-    // Check for common environment variable patterns
-    const envMappings = {
-      // Standard environment variables
-      CODEGEN_API_TOKEN: 'apiToken',
-      CODEGEN_TOKEN: 'apiToken', // Support legacy format
-      CODEGEN_ORG_ID: 'defaultOrganization',
-      CODEGEN_USER_ID: 'userId',
-      CODEGEN_API_BASE_URL: 'apiBaseUrl',
-      
-      // React environment variables
-      REACT_APP_CODEGEN_API_TOKEN: 'apiToken',
-      REACT_APP_CODEGEN_TOKEN: 'apiToken', // Support legacy format
-      REACT_APP_CODEGEN_ORG_ID: 'defaultOrganization',
-      REACT_APP_CODEGEN_USER_ID: 'userId',
-      REACT_APP_CODEGEN_API_BASE_URL: 'apiBaseUrl',
-      
-      // GitHub OAuth variables
-      REACT_APP_GITHUB_CLIENT_ID: 'githubClientId',
-      REACT_APP_GITHUB_CLIENT_SECRET: 'githubClientSecret',
-      
-      // Application URLs
-      REACT_APP_HOMEPAGE_URL: 'homepageUrl',
-      REACT_APP_AUTHORIZATION_CALLBACK_URL: 'authCallbackUrl',
-      
-      // Feature flags
-      REACT_APP_ENABLE_DARK_MODE: 'enableDarkMode',
-      REACT_APP_ENABLE_OFFLINE_MODE: 'enableOfflineMode'
-    };
-
-    // Try to get from process.env (Node.js/build time)
-    if (typeof process !== 'undefined' && process.env) {
-      for (const [envKey, prefKey] of Object.entries(envMappings)) {
-        if (process.env[envKey]) {
-          envVars[prefKey] = process.env[envKey];
-          console.log(`🔧 Found environment variable: ${envKey} -> ${prefKey}`);
-        }
-      }
-    }
-
-    // Try to get from window (runtime environment variables)
-    if (typeof window !== 'undefined') {
-      // Check for variables set on window object
-      const windowEnv = (window as any).ENV || {};
-      for (const [envKey, prefKey] of Object.entries(envMappings)) {
-        if (windowEnv[envKey]) {
-          envVars[prefKey] = windowEnv[envKey];
-        }
-      }
-
-      // Check for data attributes on document
-      const htmlElement = document.documentElement;
-      for (const [envKey, prefKey] of Object.entries(envMappings)) {
-        const dataAttr = `data-${envKey.toLowerCase().replace(/_/g, '-')}`;
-        const value = htmlElement.getAttribute(dataAttr);
-        if (value) {
-          envVars[prefKey] = value;
-        }
-      }
-    }
-
-    return envVars;
-  }
-
-  /**
-   * Emit preferences change event
-   */
-  private emitPreferencesChange(preferences: PreferenceValues): void {
-    if (typeof window !== 'undefined') {
-      const event = new CustomEvent('preferences-changed', { 
-        detail: preferences 
-      });
-      window.dispatchEvent(event);
-    }
-  }
-
-  /**
-   * Listen for preferences changes
-   */
-  onPreferencesChange(callback: (preferences: PreferenceValues) => void): () => void {
-    const handleChange = (event: CustomEvent) => {
-      callback(event.detail);
-    };
-
-    if (typeof window !== 'undefined') {
-      window.addEventListener('preferences-changed', handleChange as EventListener);
-      
-      return () => {
-        window.removeEventListener('preferences-changed', handleChange as EventListener);
-      };
-    }
-
-    return () => {}; // No-op cleanup for non-browser environments
+  } catch (error) {
+    console.error('Failed to get preferences from storage:', error);
+    return DEFAULT_PREFERENCES;
   }
 }
 
-// Create singleton instance
-const webPreferences = new WebPreferences();
+/**
+ * Save user preferences to localStorage
+ */
+export function savePreferenceValues(preferences: Partial<UserPreferences>): void {
+  try {
+    const currentPrefs = getPreferenceValues();
+    const updatedPrefs = {
+      ...currentPrefs,
+      ...preferences,
+    };
+    
+    localStorage.setItem(PREFERENCES_STORAGE_KEY, JSON.stringify(updatedPrefs));
+  } catch (error) {
+    console.error('Failed to save preferences to storage:', error);
+    throw error;
+  }
+}
 
-// Export function that matches Raycast API
-export function getPreferenceValues<T extends PreferenceValues = PreferenceValues>(): T {
-  // For synchronous compatibility, we'll need to handle this differently
-  // This is a limitation when converting from sync to async API
-  if (webPreferences['cachedPreferences']) {
-    return webPreferences['cachedPreferences'] as T;
+/**
+ * Reset preferences to defaults
+ */
+export function resetPreferences(): void {
+  try {
+    localStorage.setItem(PREFERENCES_STORAGE_KEY, JSON.stringify(DEFAULT_PREFERENCES));
+  } catch (error) {
+    console.error('Failed to reset preferences:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get the current theme based on preferences and system settings
+ */
+export function getCurrentTheme(): 'light' | 'dark' {
+  const preferences = getPreferenceValues();
+  
+  if (preferences.theme === 'system') {
+    // Check system preference
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   }
   
-  // If no cached preferences, return defaults and trigger async load
-  webPreferences.getPreferenceValues().catch(console.error);
-  return DEFAULT_PREFERENCES as unknown as T;
+  return preferences.theme;
 }
 
-// Export async version for better control
-export async function getPreferenceValuesAsync<T extends PreferenceValues = PreferenceValues>(): Promise<T> {
-  return webPreferences.getPreferenceValues<T>();
+/**
+ * Apply the current theme to the document
+ */
+export function applyTheme(): void {
+  const theme = getCurrentTheme();
+  document.documentElement.setAttribute('data-theme', theme);
+  
+  // Add/remove dark class from body
+  if (theme === 'dark') {
+    document.body.classList.add('dark-theme');
+  } else {
+    document.body.classList.remove('dark-theme');
+  }
 }
 
-// Export other utility functions with proper binding
-export const setPreferenceValues = webPreferences.setPreferenceValues.bind(webPreferences);
-export const getPreference = webPreferences.getPreference.bind(webPreferences);
-export const setPreference = webPreferences.setPreference.bind(webPreferences);
-export const clearPreferences = webPreferences.clearPreferences.bind(webPreferences);
-export const onPreferencesChange = webPreferences.onPreferencesChange.bind(webPreferences);
-
-// Initialize preferences on module load
-if (typeof window !== 'undefined') {
-  webPreferences.getPreferenceValues().catch(console.error);
-}
-
-export default webPreferences;
