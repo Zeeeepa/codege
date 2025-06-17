@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   List,
   ListItem as List_Item,
@@ -27,8 +27,6 @@ const Color = {
   SecondaryText: '#8E8E93'
 };
 
-
-
 // Type for organizations from validation (simplified structure)
 type BasicOrganization = {
   id: number;
@@ -54,6 +52,9 @@ export default function ListOrganizations() {
       }
 
       try {
+        // Ensure API client has the latest credentials
+        apiClient.updateCredentials();
+        
         // Validate credentials and get organizations
         const validation = await validateCredentials();
         if (!validation.isValid) {
@@ -72,17 +73,34 @@ export default function ListOrganizations() {
           setDefaultOrgId(parseInt(defaultOrg, 10));
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load organizations");
+        console.error("❌ Failed to load organizations:", err);
+        
+        // Provide more helpful error message
+        let errorMessage = "Failed to load organizations. ";
+        if (err instanceof Error) {
+          errorMessage += err.message;
+        } else {
+          errorMessage += "An unknown error occurred.";
+        }
+        
+        setError(errorMessage);
+        
+        // Show toast with error
+        await showToast({
+          style: Toast.Failure,
+          title: "Error Loading Organizations",
+          message: errorMessage,
+        });
       } finally {
         setIsLoading(false);
       }
     }
 
     loadData();
-  }, []);
+  }, [apiClient]);
 
   // Set default organization
-  const setDefaultOrganization = async (orgId: number) => {
+  const setDefaultOrganization = useCallback(async (orgId: number) => {
     try {
       const selectedOrg = organizations.find(org => org.id === orgId);
       
@@ -106,10 +124,10 @@ export default function ListOrganizations() {
         message: error instanceof Error ? error.message : "Unknown error",
       });
     }
-  };
+  }, [organizations]);
 
   // Clear default organization
-  const clearDefaultOrganization = async () => {
+  const clearDefaultOrganization = useCallback(async () => {
     try {
       await LocalStorage.removeItem("defaultOrganizationId");
       await LocalStorage.removeItem("defaultOrganization");
@@ -127,14 +145,17 @@ export default function ListOrganizations() {
         message: error instanceof Error ? error.message : "Unknown error",
       });
     }
-  };
+  }, []);
 
   // Refresh organizations
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
     try {
+      // Ensure API client has the latest credentials
+      apiClient.updateCredentials();
+      
       const validation = await validateCredentials();
       if (validation.isValid && validation.organizations) {
         setOrganizations(validation.organizations);
@@ -142,11 +163,28 @@ export default function ListOrganizations() {
         setError(validation.error || "Failed to load organizations");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to refresh organizations");
+      console.error("❌ Failed to refresh organizations:", err);
+      
+      // Provide more helpful error message
+      let errorMessage = "Failed to refresh organizations. ";
+      if (err instanceof Error) {
+        errorMessage += err.message;
+      } else {
+        errorMessage += "An unknown error occurred.";
+      }
+      
+      setError(errorMessage);
+      
+      // Show toast with error
+      await showToast({
+        style: Toast.Failure,
+        title: "Error Refreshing Organizations",
+        message: errorMessage,
+      });
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [apiClient]);
 
   if (error && !isLoading) {
     return (
@@ -158,6 +196,12 @@ export default function ListOrganizations() {
           actions={
             <ActionPanel>
               <Action title="Retry" onAction={refresh} />
+              <Action 
+                title="Check Network Connection" 
+                onAction={() => {
+                  window.open('https://www.google.com', '_blank');
+                }} 
+              />
               <OpenAction
                 title="Open Extension Preferences"
                 target="https://codegen.com/settings"

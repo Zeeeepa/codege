@@ -19,11 +19,25 @@ import {
 export class CodegenAPIClient {
   private baseUrl: string;
   private apiToken: string;
+  private organizationId?: number;
 
   constructor() {
     const credentials = getCredentials();
     this.baseUrl = credentials.apiBaseUrl || DEFAULT_API_BASE_URL;
     this.apiToken = credentials.apiToken || '';
+    this.organizationId = credentials.organizationId;
+  }
+
+  /**
+   * Update client credentials
+   * This is useful when credentials change during the application lifecycle
+   */
+  public updateCredentials(): void {
+    const credentials = getCredentials();
+    this.baseUrl = credentials.apiBaseUrl || DEFAULT_API_BASE_URL;
+    this.apiToken = credentials.apiToken || '';
+    this.organizationId = credentials.organizationId;
+    console.log("🔄 API client credentials updated");
   }
 
   private async makeRequest<T>(
@@ -43,12 +57,17 @@ export class CodegenAPIClient {
     };
 
     try {
+      console.log(`🌐 Making API request to: ${url}`);
+      
       const response = await fetchWithRetry(url, {
         ...options,
         headers: {
           ...defaultHeaders,
           ...options.headers,
         },
+      }, {
+        // Add longer timeout for potentially slow API endpoints
+        timeout: 60000, // 60 seconds
       });
 
       if (!response.ok) {
@@ -57,9 +76,25 @@ export class CodegenAPIClient {
 
       return await response.json() as T;
     } catch (error) {
-      console.error(`API request failed for ${endpoint}:`, error);
+      console.error(`❌ API request failed for ${endpoint}:`, error);
       
+      // Enhance error message based on error type
       if (error instanceof Error) {
+        // Check for network connectivity issues
+        if (error.message.includes('No internet connection')) {
+          throw new Error(`Network error: No internet connection. Please check your network and try again.`);
+        }
+        
+        // Check for CORS issues
+        if (error.message.includes('CORS') || error.message.includes('cross-origin')) {
+          throw new Error(`CORS error: The API server at ${this.baseUrl} doesn't allow requests from this origin. Try using a different API URL or enable CORS on the server.`);
+        }
+        
+        // Check for timeout
+        if (error.message.includes('timed out') || error.message.includes('timeout')) {
+          throw new Error(`Request timeout: The API server at ${this.baseUrl} is taking too long to respond. Please try again later.`);
+        }
+        
         throw error;
       }
       
