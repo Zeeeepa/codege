@@ -54,22 +54,18 @@ export function getCredentials(): Credentials {
     const apiToken = preferences.apiToken || 
                     (preferences.token as string | undefined) || // Legacy token name
                     envApiToken || 
-                    process.env.CODEGEN_API_TOKEN || 
                     process.env.CODEGEN_TOKEN || // Legacy env var name
-                    process.env.REACT_APP_CODEGEN_API_TOKEN || 
-                    process.env.REACT_APP_CODEGEN_TOKEN || ''; // React env var format
+                    '';
     
     // Get organization ID from preferences or environment variables
     const orgId = preferences.organizationId || 
                  preferences.defaultOrganization ||
                  envOrgId || 
-                 process.env.CODEGEN_ORG_ID || 
-                 process.env.REACT_APP_CODEGEN_ORG_ID;
+                 '';
     
     // Get API base URL from preferences or environment variables
     let apiBaseUrl = preferences.apiBaseUrl || 
                     envApiBaseUrl || 
-                    process.env.REACT_APP_CODEGEN_API_BASE_URL ||
                     'https://api.codegen.com';
     
     // Normalize the API base URL if it exists
