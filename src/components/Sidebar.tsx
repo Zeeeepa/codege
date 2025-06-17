@@ -1,21 +1,5 @@
 import React from 'react';
-
-// Dashboard sections enum (must match the one in Dashboard.tsx)
-enum DashboardSection {
-  OVERVIEW = 'overview',
-  AGENT_RUNS = 'agent-runs',
-  CREATE_RUN = 'create-run',
-  ORGANIZATIONS = 'organizations',
-  PROJECTS = 'projects',
-  SETTINGS = 'settings'
-}
-
-interface SidebarProps {
-  activeSection: DashboardSection;
-  onSectionChange: (section: DashboardSection) => void;
-  userInfo: any | null;
-  isLoading: boolean;
-}
+import { DashboardSection, SidebarProps, NavItem, UserInfo } from '../types/dashboard';
 
 const Sidebar: React.FC<SidebarProps> = ({ 
   activeSection, 
@@ -24,7 +8,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   isLoading
 }) => {
   // Get user display name
-  const getUserDisplayName = () => {
+  const getUserDisplayName = (): string => {
     if (isLoading) return 'Loading...';
     if (!userInfo) return 'Guest User';
     
@@ -35,36 +19,42 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
   
   // Navigation items
-  const navItems = [
+  const navItems: NavItem[] = [
     {
       id: DashboardSection.OVERVIEW,
       label: 'Overview',
-      icon: '📊'
+      icon: '📊',
+      description: 'Dashboard overview and statistics'
     },
     {
       id: DashboardSection.AGENT_RUNS,
       label: 'Agent Runs',
-      icon: '🤖'
+      icon: '🤖',
+      description: 'View and manage agent runs'
     },
     {
       id: DashboardSection.CREATE_RUN,
       label: 'Create Run',
-      icon: '➕'
+      icon: '➕',
+      description: 'Create a new agent run'
     },
     {
       id: DashboardSection.ORGANIZATIONS,
       label: 'Organizations',
-      icon: '🏢'
+      icon: '🏢',
+      description: 'Manage your organizations'
     },
     {
       id: DashboardSection.PROJECTS,
       label: 'Projects',
-      icon: '📁'
+      icon: '📁',
+      description: 'View and manage projects'
     },
     {
       id: DashboardSection.SETTINGS,
       label: 'Settings',
-      icon: '⚙️'
+      icon: '⚙️',
+      description: 'Application settings and preferences'
     }
   ];
 
@@ -124,4 +114,3 @@ const Sidebar: React.FC<SidebarProps> = ({
 };
 
 export default Sidebar;
-

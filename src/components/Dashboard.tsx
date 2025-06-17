@@ -1,88 +1,113 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { getAPIClient } from '../api/client';
 import { validateCredentials, getCurrentUserInfo } from '../utils/credentials';
 import { showToast, Toast_Style as Toast } from './WebToast';
 import { getGitHubService } from '../services/github.service';
-import ListAgentRuns from '../list-agent-runs';
-import CreateAgentRun from '../create-agent-run';
-import ListOrganizations from '../list-organizations';
-import ProjectDashboard from './ProjectDashboard';
 import Sidebar from './Sidebar';
+import ErrorBoundary from './ErrorBoundary';
+import { 
+  DashboardSection, 
+  DashboardProps, 
+  DashboardState,
+  UserInfo,
+  Organization,
+  AgentRun
+} from '../types/dashboard';
 
-// Dashboard sections
-enum DashboardSection {
-  OVERVIEW = 'overview',
-  AGENT_RUNS = 'agent-runs',
-  CREATE_RUN = 'create-run',
-  ORGANIZATIONS = 'organizations',
-  PROJECTS = 'projects',
-  SETTINGS = 'settings'
-}
+// Lazy load components for better performance
+const ListAgentRuns = lazy(() => import('../list-agent-runs'));
+const CreateAgentRun = lazy(() => import('../create-agent-run'));
+const ListOrganizations = lazy(() => import('../list-organizations'));
+const ProjectDashboard = lazy(() => import('./ProjectDashboard'));
 
-const Dashboard: React.FC = () => {
-  const [activeSection, setActiveSection] = useState<DashboardSection>(DashboardSection.OVERVIEW);
-  const [isLoading, setIsLoading] = useState(true);
-  const [userInfo, setUserInfo] = useState<any>(null);
-  const [organizations, setOrganizations] = useState<any[]>([]);
-  const [agentRuns, setAgentRuns] = useState<any[]>([]);
-  const [githubConnected, setGithubConnected] = useState(false);
+// Loading component for suspense fallback
+const LoadingComponent = () => (
+  <div className="component-loading">
+    <div className="loading-spinner"></div>
+    <p>Loading component...</p>
+  </div>
+);
+
+const Dashboard: React.FC<DashboardProps> = ({ initialSection }) => {
+  const [state, setState] = useState<DashboardState>({
+    activeSection: initialSection || DashboardSection.OVERVIEW,
+    isLoading: true,
+    userInfo: null,
+    organizations: [],
+    agentRuns: [],
+    githubConnected: false,
+    error: null
+  });
   
   const navigate = useNavigate();
+  const location = useLocation();
   const apiClient = getAPIClient();
   const githubService = getGitHubService();
+
+  // Update state helper function
+  const updateState = (newState: Partial<DashboardState>) => {
+    setState(prevState => ({ ...prevState, ...newState }));
+  };
 
   // Load initial data
   useEffect(() => {
     const loadData = async () => {
       try {
-        setIsLoading(true);
+        updateState({ isLoading: true, error: null });
         
         // Get user info
         const user = await getCurrentUserInfo();
-        setUserInfo(user);
+        updateState({ userInfo: user as UserInfo });
         
         // Check GitHub connection
         const isGithubConnected = githubService.isAuthenticated();
-        setGithubConnected(isGithubConnected);
+        updateState({ githubConnected: isGithubConnected });
         
         // Get organizations
         const validation = await validateCredentials();
         if (validation.isValid && validation.organizations) {
-          setOrganizations(validation.organizations);
+          updateState({ organizations: validation.organizations as Organization[] });
         }
         
-        // Set default section based on URL path
-        const path = window.location.pathname;
+        // Set active section based on URL path
+        const path = location.pathname;
+        let activeSection = DashboardSection.OVERVIEW;
+        
         if (path.includes('agent-runs')) {
-          setActiveSection(DashboardSection.AGENT_RUNS);
+          activeSection = DashboardSection.AGENT_RUNS;
         } else if (path.includes('create')) {
-          setActiveSection(DashboardSection.CREATE_RUN);
+          activeSection = DashboardSection.CREATE_RUN;
         } else if (path.includes('organizations')) {
-          setActiveSection(DashboardSection.ORGANIZATIONS);
+          activeSection = DashboardSection.ORGANIZATIONS;
         } else if (path.includes('projects')) {
-          setActiveSection(DashboardSection.PROJECTS);
+          activeSection = DashboardSection.PROJECTS;
         } else if (path.includes('settings')) {
-          setActiveSection(DashboardSection.SETTINGS);
+          activeSection = DashboardSection.SETTINGS;
         }
+        
+        updateState({ activeSection });
       } catch (error) {
         console.error('Failed to load dashboard data:', error);
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+        updateState({ error: errorMessage });
+        
         await showToast({
           style: Toast.Failure,
           title: 'Failed to Load Data',
-          message: error instanceof Error ? error.message : 'An unknown error occurred',
+          message: errorMessage,
         });
       } finally {
-        setIsLoading(false);
+        updateState({ isLoading: false });
       }
     };
     
     loadData();
-  }, [githubService]);
+  }, [githubService, location.pathname]);
 
   // Handle section change
   const handleSectionChange = (section: DashboardSection) => {
-    setActiveSection(section);
+    updateState({ activeSection: section });
     
     // Update URL to match section
     switch (section) {
@@ -108,7 +133,7 @@ const Dashboard: React.FC = () => {
 
   // Render active section content
   const renderSectionContent = () => {
-    switch (activeSection) {
+    switch (state.activeSection) {
       case DashboardSection.OVERVIEW:
         return (
           <div className="dashboard-overview">
@@ -121,7 +146,7 @@ const Dashboard: React.FC = () => {
             
             <div className="dashboard-grid">
               <div className="dashboard-stat-card">
-                <div className="stat-value">{organizations.length}</div>
+                <div className="stat-value">{state.organizations.length}</div>
                 <div className="stat-label">Organizations</div>
                 <div className="stat-action" onClick={() => handleSectionChange(DashboardSection.ORGANIZATIONS)}>
                   View All →
@@ -129,7 +154,7 @@ const Dashboard: React.FC = () => {
               </div>
               
               <div className="dashboard-stat-card">
-                <div className="stat-value">{agentRuns.length}</div>
+                <div className="stat-value">{state.agentRuns.length}</div>
                 <div className="stat-label">Agent Runs</div>
                 <div className="stat-action" onClick={() => handleSectionChange(DashboardSection.AGENT_RUNS)}>
                   View All →
@@ -137,10 +162,10 @@ const Dashboard: React.FC = () => {
               </div>
               
               <div className="dashboard-stat-card">
-                <div className="stat-value">{githubConnected ? 'Connected' : 'Not Connected'}</div>
+                <div className="stat-value">{state.githubConnected ? 'Connected' : 'Not Connected'}</div>
                 <div className="stat-label">GitHub Status</div>
                 <div className="stat-action" onClick={() => handleSectionChange(DashboardSection.PROJECTS)}>
-                  {githubConnected ? 'View Projects →' : 'Connect →'}
+                  {state.githubConnected ? 'View Projects →' : 'Connect →'}
                 </div>
               </div>
             </div>
@@ -156,7 +181,7 @@ const Dashboard: React.FC = () => {
                 </button>
               </div>
               <div className="dashboard-card-content">
-                {agentRuns.length > 0 ? (
+                {state.agentRuns.length > 0 ? (
                   <div className="recent-runs-list">
                     {/* Render recent runs here */}
                     <p>Recent runs will be displayed here</p>
@@ -170,16 +195,32 @@ const Dashboard: React.FC = () => {
         );
       
       case DashboardSection.AGENT_RUNS:
-        return <ListAgentRuns />;
+        return (
+          <Suspense fallback={<LoadingComponent />}>
+            <ListAgentRuns />
+          </Suspense>
+        );
       
       case DashboardSection.CREATE_RUN:
-        return <CreateAgentRun />;
+        return (
+          <Suspense fallback={<LoadingComponent />}>
+            <CreateAgentRun />
+          </Suspense>
+        );
       
       case DashboardSection.ORGANIZATIONS:
-        return <ListOrganizations />;
+        return (
+          <Suspense fallback={<LoadingComponent />}>
+            <ListOrganizations />
+          </Suspense>
+        );
       
       case DashboardSection.PROJECTS:
-        return <ProjectDashboard />;
+        return (
+          <Suspense fallback={<LoadingComponent />}>
+            <ProjectDashboard />
+          </Suspense>
+        );
       
       case DashboardSection.SETTINGS:
         return (
@@ -219,20 +260,31 @@ const Dashboard: React.FC = () => {
   return (
     <div className="dashboard-container">
       <Sidebar 
-        activeSection={activeSection}
+        activeSection={state.activeSection}
         onSectionChange={handleSectionChange}
-        userInfo={userInfo}
-        isLoading={isLoading}
+        userInfo={state.userInfo}
+        isLoading={state.isLoading}
       />
       
       <div className="dashboard-content">
-        {isLoading ? (
+        {state.isLoading ? (
           <div className="dashboard-loading">
             <div className="loading-spinner"></div>
             <p>Loading dashboard...</p>
           </div>
         ) : (
-          renderSectionContent()
+          <ErrorBoundary
+            onError={(error) => {
+              console.error('Dashboard error:', error);
+              showToast({
+                style: Toast.Failure,
+                title: 'Error',
+                message: 'An error occurred while rendering the dashboard. Please try again.',
+              });
+            }}
+          >
+            {renderSectionContent()}
+          </ErrorBoundary>
         )}
       </div>
     </div>
@@ -240,4 +292,3 @@ const Dashboard: React.FC = () => {
 };
 
 export default Dashboard;
-
