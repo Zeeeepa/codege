@@ -9,8 +9,7 @@ import {
   RequirementStatus,
   ImplementationStatus,
   NotificationType,
-  CreatePlanRequest,
-  ImplementPlanRequest
+
 } from '../types/project';
 import { GitHubRepository } from '../types/github';
 
@@ -240,17 +239,8 @@ export class ProjectService {
       // Update requirement status
       await this.updateRequirement(requirementId, { status: RequirementStatus.PLANNING });
 
-      // Create plan request with the comprehensive template
-      const apiClient = getAPIClient();
-      const planRequest: CreatePlanRequest = {
-        template: 'CreatePlan',
-        variables: {
-          UserRequirementsForFeatureInCodebase: requirement.text
-        },
-        organization_id: organizationId
-      };
-
       // Call Codegen API to create agent run with CreatePlan template
+      const apiClient = getAPIClient();
       const agentRun = await apiClient.createAgentRun(organizationId, {
         prompt: this.buildCreatePlanPrompt(requirement.text)
       });
@@ -470,19 +460,8 @@ Review this plan and click "Start" to begin implementation.
       
       await this.updateRequirement(requirement.id, { status: RequirementStatus.IMPLEMENTING });
 
-      // Create implementation request
-      const apiClient = getAPIClient();
-      const implementRequest: ImplementPlanRequest = {
-        template: 'ImplementPlan',
-        variables: {
-          PlanContent: plan.content,
-          ProjectRepository: project.repository.full_name,
-          RequirementText: requirement.text
-        },
-        organization_id: organizationId
-      };
-
       // Call Codegen API to start implementation
+      const apiClient = getAPIClient();
       const agentRun = await apiClient.createAgentRun(organizationId, {
         prompt: this.buildImplementPlanPrompt(plan.content, project.repository.full_name, requirement.text)
       });
