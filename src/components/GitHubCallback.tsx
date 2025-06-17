@@ -106,44 +106,45 @@ const GitHubCallback: React.FC = () => {
       alignItems: 'center',
       minHeight: '100vh',
       padding: '20px',
-      backgroundColor: '#f5f5f5'
+      backgroundColor: '#121212' // Dark background
     }}>
       <div className="callback-content" style={{
-        backgroundColor: 'white',
+        backgroundColor: '#1e1e1e', // Dark card background
         padding: '40px',
         borderRadius: '12px',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
         maxWidth: '500px',
         width: '100%',
-        textAlign: 'center'
+        textAlign: 'center',
+        color: '#e0e0e0' // Light text for dark background
       }}>
         {processing ? (
           <div className="processing-state">
             <div className="loading-spinner" style={{
-              border: '4px solid #f3f3f3',
-              borderTop: '4px solid #3498db',
+              border: '4px solid #333333',
+              borderTop: '4px solid #2563eb', // Blue spinner
               borderRadius: '50%',
               width: '40px',
               height: '40px',
               animation: 'spin 2s linear infinite',
               margin: '0 auto 20px'
             }}></div>
-            <h2 style={{ fontSize: '24px', marginBottom: '16px' }}>Connecting to GitHub...</h2>
-            <p style={{ color: '#666' }}>Please wait while we complete the authentication process.</p>
+            <h2 style={{ fontSize: '24px', marginBottom: '16px', color: '#e0e0e0' }}>Connecting to GitHub...</h2>
+            <p style={{ color: '#a0a0a0' }}>Please wait while we complete the authentication process.</p>
           </div>
         ) : error ? (
           <div className="error-state">
             <div className="error-icon" style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
             <h2 style={{ fontSize: '24px', marginBottom: '16px', color: '#e74c3c' }}>Authentication Failed</h2>
-            <p style={{ color: '#666', marginBottom: '16px' }}>{error}</p>
-            <p style={{ color: '#999', fontSize: '14px' }}>This window will close automatically in a few seconds.</p>
+            <p style={{ color: '#a0a0a0', marginBottom: '16px' }}>{error}</p>
+            <p style={{ color: '#707070', fontSize: '14px' }}>This window will close automatically in a few seconds.</p>
           </div>
         ) : (
           <div className="success-state">
             <div className="success-icon" style={{ fontSize: '48px', marginBottom: '16px' }}>✅</div>
             <h2 style={{ fontSize: '24px', marginBottom: '16px', color: '#2ecc71' }}>Successfully Connected!</h2>
-            <p style={{ color: '#666', marginBottom: '16px' }}>Your GitHub account has been connected successfully.</p>
-            <p style={{ color: '#999', fontSize: '14px' }}>You can now close this window and return to the application.</p>
+            <p style={{ color: '#a0a0a0', marginBottom: '16px' }}>Your GitHub account has been connected successfully.</p>
+            <p style={{ color: '#707070', fontSize: '14px' }}>You can now close this window and return to the application.</p>
           </div>
         )}
       </div>
@@ -160,4 +161,3 @@ const GitHubCallback: React.FC = () => {
 };
 
 export default GitHubCallback;
-

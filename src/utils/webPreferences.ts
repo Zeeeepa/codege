@@ -101,15 +101,24 @@ class WebPreferences {
       CODEGEN_USER_ID: 'userId',
       CODEGEN_API_BASE_URL: 'apiBaseUrl',
       
-      // Legacy support
-      RAYCAST_CODEGEN_API_BASE_URL: 'apiBaseUrl',
-      
       // React environment variables
       REACT_APP_CODEGEN_API_TOKEN: 'apiToken',
       REACT_APP_CODEGEN_TOKEN: 'apiToken', // Support legacy format
       REACT_APP_CODEGEN_ORG_ID: 'defaultOrganization',
       REACT_APP_CODEGEN_USER_ID: 'userId',
       REACT_APP_CODEGEN_API_BASE_URL: 'apiBaseUrl',
+      
+      // GitHub OAuth variables
+      REACT_APP_GITHUB_CLIENT_ID: 'githubClientId',
+      REACT_APP_GITHUB_CLIENT_SECRET: 'githubClientSecret',
+      
+      // Application URLs
+      REACT_APP_HOMEPAGE_URL: 'homepageUrl',
+      REACT_APP_AUTHORIZATION_CALLBACK_URL: 'authCallbackUrl',
+      
+      // Feature flags
+      REACT_APP_ENABLE_DARK_MODE: 'enableDarkMode',
+      REACT_APP_ENABLE_OFFLINE_MODE: 'enableOfflineMode'
     };
 
     // Try to get from process.env (Node.js/build time)

@@ -7,14 +7,17 @@ import { useNavigate } from 'react-router-dom';
 import { hasCredentials } from './utils/credentials';
 
 // Import main components
+import Dashboard from './components/Dashboard';
+import GitHubCallback from './components/GitHubCallback';
+import CredentialsSetup from './components/CredentialsSetup';
+
+// For backward compatibility - these will be rendered inside the Dashboard
 import CreateAgentRun from './create-agent-run';
 import ListAgentRuns from './list-agent-runs';
 import ListOrganizations from './list-organizations';
 import ProjectDashboard from './components/ProjectDashboard';
-import GitHubCallback from './components/GitHubCallback';
-import CredentialsSetup from './components/CredentialsSetup';
 
-// App Layout Component
+// App Layout Component - No longer needed as Dashboard handles layout
 function AppLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const toastManager = useToast();
@@ -29,41 +32,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="app-layout">
-      <header className="app-header">
-        <div className="app-header-content">
-          <h1 className="app-title">Codegen</h1>
-          <nav className="app-nav">
-            <button 
-              className="nav-button"
-              onClick={() => navigate('/agent-runs')}
-            >
-              Agent Runs
-            </button>
-            <button 
-              className="nav-button"
-              onClick={() => navigate('/create')}
-            >
-              Create Run
-            </button>
-            <button 
-              className="nav-button"
-              onClick={() => navigate('/organizations')}
-            >
-              Organizations
-            </button>
-            <button 
-              className="nav-button"
-              onClick={() => navigate('/projects')}
-            >
-              Projects
-            </button>
-          </nav>
-        </div>
-      </header>
-      
-      <main className="app-main">
-        {children}
-      </main>
+      {children}
     </div>
   );
 }
@@ -76,7 +45,7 @@ function App() {
   React.useEffect(() => {
     const checkCredentials = () => {
       const available = hasCredentials();
-      console.log('🔐 Credentials check:', available);
+      console.log('🔑 Credentials check:', available);
       setCredentialsAvailable(available);
     };
 
@@ -102,8 +71,18 @@ function App() {
         justifyContent: 'center',
         minHeight: '100vh',
         fontSize: '18px',
-        color: '#666'
+        color: '#e0e0e0',
+        backgroundColor: '#121212'
       }}>
+        <div className="loading-spinner" style={{
+          border: '4px solid #333333',
+          borderTop: '4px solid #2563eb',
+          borderRadius: '50%',
+          width: '30px',
+          height: '30px',
+          animation: 'spin 1s linear infinite',
+          marginRight: '12px'
+        }}></div>
         Loading...
       </div>
     );
@@ -127,13 +106,21 @@ function App() {
         <AlertProvider>
           <AppLayout>
             <Routes>
-              <Route path="/" element={<Navigate to="/agent-runs" replace />} />
-              <Route path="/agent-runs" element={<ListAgentRuns />} />
-              <Route path="/create" element={<CreateAgentRun />} />
-              <Route path="/organizations" element={<ListOrganizations />} />
-              <Route path="/projects" element={<ProjectDashboard />} />
+              {/* Auth callback route */}
               <Route path="/auth/callback" element={<GitHubCallback />} />
-              <Route path="*" element={<Navigate to="/agent-runs" replace />} />
+              
+              {/* Main dashboard route */}
+              <Route path="/" element={<Dashboard />} />
+              
+              {/* Legacy routes - all render the Dashboard with the appropriate section */}
+              <Route path="/agent-runs" element={<Dashboard />} />
+              <Route path="/create" element={<Dashboard />} />
+              <Route path="/organizations" element={<Dashboard />} />
+              <Route path="/projects" element={<Dashboard />} />
+              <Route path="/settings" element={<Dashboard />} />
+              
+              {/* Catch-all route */}
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </AppLayout>
         </AlertProvider>
@@ -143,3 +130,4 @@ function App() {
 }
 
 export default App;
+

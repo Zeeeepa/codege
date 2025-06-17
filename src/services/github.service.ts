@@ -16,8 +16,8 @@ import {
 
 // GitHub App Configuration
 const GITHUB_CONFIG: GitHubAuthConfig = {
-  clientId: 'Ov23li1WIpEcbDjbqaRu',
-  clientSecret: '96e3e06d7ffc4447b2b4e39d9302dfb4f06f1099',
+  clientId: process.env.REACT_APP_GITHUB_CLIENT_ID || process.env.GITHUB_CLIENT_ID || 'Ov23li1WIpEcbDjbqaRu',
+  clientSecret: process.env.REACT_APP_GITHUB_CLIENT_SECRET || process.env.GITHUB_CLIENT_SECRET || '96e3e06d7ffc4447b2b4e39d9302dfb4f06f1099',
   appId: '', // Will be set from environment or config
   privateKey: '', // Will be set from environment or config
   webhookSecret: 'your-webhook-secret'
@@ -142,36 +142,63 @@ export class GitHubService {
 
       // Parse the response carefully
       let tokenData: GitHubOAuthToken;
+      
       try {
+        // First, get the raw response text
         const responseText = await tokenResponse.text();
-        console.log('Token response text:', responseText);
+        console.log('Token response format:', typeof responseText);
         
         // Check if the response is already an object (happens in some environments)
         if (responseText === "[object Object]") {
-          throw new Error('Invalid response format: GitHub returned [object Object] as a string');
-        }
-        
-        // Try to parse as JSON
-        try {
-          tokenData = JSON.parse(responseText);
-        } catch (jsonError) {
-          // If JSON parsing fails, try to parse as URL-encoded form data
-          const params = new URLSearchParams(responseText);
-          tokenData = {
-            access_token: params.get('access_token') || '',
-            token_type: params.get('token_type') || 'bearer',
-            scope: params.get('scope') || ''
-          };
+          console.warn('Received "[object Object]" as response text - this indicates the response was already parsed');
+          
+          // Try to access the original response object
+          // This is a workaround for environments that auto-parse JSON
+          const originalResponse = tokenResponse as any;
+          if (originalResponse.data && typeof originalResponse.data === 'object') {
+            console.log('Using response.data object directly');
+            tokenData = originalResponse.data;
+          } else if (originalResponse.body && typeof originalResponse.body === 'object') {
+            console.log('Using response.body object directly');
+            tokenData = originalResponse.body;
+          } else {
+            // Fallback to URL-encoded parsing
+            console.log('Falling back to URL-encoded parsing');
+            const params = new URLSearchParams('access_token=&token_type=bearer&scope=');
+            tokenData = {
+              access_token: params.get('access_token') || '',
+              token_type: params.get('token_type') || 'bearer',
+              scope: params.get('scope') || ''
+            };
+          }
+        } else {
+          // Try to parse as JSON first
+          try {
+            tokenData = JSON.parse(responseText);
+            console.log('Successfully parsed response as JSON');
+          } catch (jsonError) {
+            // If JSON parsing fails, try to parse as URL-encoded form data
+            console.log('JSON parsing failed, trying URL-encoded format');
+            const params = new URLSearchParams(responseText);
+            tokenData = {
+              access_token: params.get('access_token') || '',
+              token_type: params.get('token_type') || 'bearer',
+              scope: params.get('scope') || ''
+            };
+          }
         }
       } catch (parseError) {
         console.error('Failed to parse token response:', parseError);
         throw new Error('Invalid response format from GitHub OAuth server');
       }
       
-      if (!tokenData.access_token) {
+      // Validate the token data
+      if (!tokenData || !tokenData.access_token) {
         console.error('No access token in response:', tokenData);
         throw new Error('No access token received from GitHub');
       }
+
+      console.log('Successfully obtained GitHub token with scopes:', tokenData.scope);
 
       // Initialize Octokit with the new token
       this.octokit = new Octokit({ auth: tokenData.access_token });
