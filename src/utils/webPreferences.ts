@@ -94,13 +94,19 @@ class WebPreferences {
 
     // Check for common environment variable patterns
     const envMappings = {
+      // Standard environment variables
       CODEGEN_API_TOKEN: 'apiToken',
+      CODEGEN_TOKEN: 'apiToken', // Support legacy format
       CODEGEN_ORG_ID: 'defaultOrganization',
       CODEGEN_USER_ID: 'userId',
       CODEGEN_API_BASE_URL: 'apiBaseUrl',
-      RAYCAST_CODEGEN_API_BASE_URL: 'apiBaseUrl', // Legacy support
+      
+      // Legacy support
+      RAYCAST_CODEGEN_API_BASE_URL: 'apiBaseUrl',
+      
       // React environment variables
       REACT_APP_CODEGEN_API_TOKEN: 'apiToken',
+      REACT_APP_CODEGEN_TOKEN: 'apiToken', // Support legacy format
       REACT_APP_CODEGEN_ORG_ID: 'defaultOrganization',
       REACT_APP_CODEGEN_USER_ID: 'userId',
       REACT_APP_CODEGEN_API_BASE_URL: 'apiBaseUrl',
@@ -111,6 +117,7 @@ class WebPreferences {
       for (const [envKey, prefKey] of Object.entries(envMappings)) {
         if (process.env[envKey]) {
           envVars[prefKey] = process.env[envKey];
+          console.log(`🔧 Found environment variable: ${envKey} -> ${prefKey}`);
         }
       }
     }

@@ -27,12 +27,16 @@ export interface CredentialsValidationResult {
 export function getCredentials(): Preferences {
   const preferences = getPreferenceValues<Preferences>();
   
-  // Check for environment variables first (React app variables)
+  // Check for environment variables first (multiple formats)
   const envApiToken = process.env.REACT_APP_CODEGEN_API_TOKEN || 
-                      process.env.CODEGEN_API_TOKEN;
+                      process.env.CODEGEN_API_TOKEN ||
+                      process.env.REACT_APP_CODEGEN_TOKEN ||
+                      process.env.CODEGEN_TOKEN;
+                      
   const envApiBaseUrl = process.env.REACT_APP_CODEGEN_API_BASE_URL || 
                         process.env.CODEGEN_API_BASE_URL || 
                         process.env.RAYCAST_CODEGEN_API_BASE_URL;
+                        
   const envOrgId = process.env.REACT_APP_CODEGEN_ORG_ID || 
                    process.env.CODEGEN_ORG_ID;
 
@@ -291,7 +295,9 @@ export function hasCredentials(): boolean {
   try {
     // Check environment variables first
     const envApiToken = process.env.REACT_APP_CODEGEN_API_TOKEN || 
-                        process.env.CODEGEN_API_TOKEN;
+                        process.env.CODEGEN_API_TOKEN ||
+                        process.env.REACT_APP_CODEGEN_TOKEN ||
+                        process.env.CODEGEN_TOKEN;
     if (envApiToken) {
       return true;
     }
