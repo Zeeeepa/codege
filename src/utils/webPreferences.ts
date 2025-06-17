@@ -192,14 +192,12 @@ export async function getPreferenceValuesAsync<T extends PreferenceValues = Pref
   return webPreferences.getPreferenceValues<T>();
 }
 
-// Export other utility functions
-export const {
-  setPreferenceValues,
-  getPreference,
-  setPreference,
-  clearPreferences,
-  onPreferencesChange,
-} = webPreferences;
+// Export other utility functions with proper binding
+export const setPreferenceValues = webPreferences.setPreferenceValues.bind(webPreferences);
+export const getPreference = webPreferences.getPreference.bind(webPreferences);
+export const setPreference = webPreferences.setPreference.bind(webPreferences);
+export const clearPreferences = webPreferences.clearPreferences.bind(webPreferences);
+export const onPreferencesChange = webPreferences.onPreferencesChange.bind(webPreferences);
 
 // Initialize preferences on module load
 if (typeof window !== 'undefined') {
