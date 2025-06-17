@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getGitHubService } from '../services/github.service';
 import { showToast, Toast_Style as Toast } from './WebToast';
@@ -11,11 +11,7 @@ const GitHubCallback: React.FC = () => {
 
   const githubService = getGitHubService();
 
-  useEffect(() => {
-    handleCallback();
-  }, []);
-
-  const handleCallback = async () => {
+  const handleCallback = useCallback(async () => {
     try {
       const code = searchParams.get('code');
       const state = searchParams.get('state');
@@ -64,7 +60,11 @@ const GitHubCallback: React.FC = () => {
     } finally {
       setProcessing(false);
     }
-  };
+  }, [searchParams, githubService, navigate]);
+
+  useEffect(() => {
+    handleCallback();
+  }, [handleCallback]);
 
   return (
     <div className="github-callback">
@@ -96,4 +96,3 @@ const GitHubCallback: React.FC = () => {
 };
 
 export default GitHubCallback;
-

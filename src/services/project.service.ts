@@ -10,8 +10,7 @@ import {
   ImplementationStatus,
   NotificationType,
   CreatePlanRequest,
-  ImplementPlanRequest,
-  PlanResponse
+  ImplementPlanRequest
 } from '../types/project';
 import { GitHubRepository } from '../types/github';
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { showToast, Toast_Style as Toast } from "../components/WebToast";
-import { AgentRunResponse, AgentRunFilters, SortOptions, AgentRunStatus } from "../api/types";
+import { AgentRunResponse, AgentRunFilters, SortOptions } from "../api/types";
 import { getAgentRunCache } from "../storage/agentRunCache";
 import { getAPIClient } from "../api/client";
 import { filterAgentRuns, sortAgentRuns } from "../utils/filtering";

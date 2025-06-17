@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { getProjectService } from '../services/project.service';
 import { getGitHubService } from '../services/github.service';
 import { Project, RequirementStatus, ImplementationStatus } from '../types/project';
@@ -23,12 +23,7 @@ const ProjectDashboard: React.FC = () => {
   const projectService = getProjectService();
   const githubService = getGitHubService();
 
-  useEffect(() => {
-    loadProjects();
-    checkGitHubAuth();
-  }, []);
-
-  const loadProjects = async () => {
+  const loadProjects = useCallback(async () => {
     try {
       setLoading(true);
       const projectsData = await projectService.getProjects();
@@ -39,13 +34,18 @@ const ProjectDashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [projectService]);
 
-  const checkGitHubAuth = () => {
+  const checkGitHubAuth = useCallback(() => {
     if (githubService.isAuthenticated()) {
       setGithubUser(githubService.getCurrentUser());
     }
-  };
+  }, [githubService]);
+
+  useEffect(() => {
+    loadProjects();
+    checkGitHubAuth();
+  }, [loadProjects, checkGitHubAuth]);
 
   const handleGitHubAuth = async () => {
     try {
@@ -395,4 +395,3 @@ const ProjectDashboard: React.FC = () => {
 };
 
 export default ProjectDashboard;
-

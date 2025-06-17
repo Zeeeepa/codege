@@ -1,10 +1,6 @@
 import { useState, useEffect } from "react";
 import {
   Form,
-  FormTextField as Form_TextField,
-  FormDropdown as Form_Dropdown,
-  FormCheckbox as Form_Checkbox,
-  DropdownItem as Dropdown_Item,
 } from "./components/WebForm";
 import {
   ActionPanel,
@@ -16,10 +12,10 @@ import { useNavigation } from "./hooks/useWebNavigation";
 import { getPreferenceValues } from "./utils/webPreferences";
 import { Clipboard } from "./utils/webClipboard";
 import { LocalStorage } from "./utils/webStorage";
-import { getCurrentUserFirstName } from "./utils/userProfile";
+
 import { getAPIClient } from "./api/client";
 import { getAgentRunCache } from "./storage/agentRunCache";
-import { validateCredentials, hasCredentials, getCredentials } from "./utils/credentials";
+import { validateCredentials, hasCredentials } from "./utils/credentials";
 import { OrganizationResponse } from "./api/types";
 import { useCachedAgentRuns } from "./hooks/useCachedAgentRuns";
 import { getBackgroundMonitoringService } from "./utils/backgroundMonitoring";
@@ -41,7 +37,7 @@ export default function CreateAgentRun() {
   const [organizations, setOrganizations] = useState<OrganizationResponse[]>([]);
   const [isLoadingOrgs, setIsLoadingOrgs] = useState(true);
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [userFirstName, setUserFirstName] = useState<string>("User");
+
   const [defaultOrgId, setDefaultOrgId] = useState<string | null>(null);
   const { refresh } = useCachedAgentRuns();
 
