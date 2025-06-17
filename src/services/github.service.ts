@@ -207,7 +207,12 @@ export class GitHubService {
         direction: 'desc',
       });
 
-      return data;
+      // Transform the data to match our interface
+      return data.map(repo => ({
+        ...repo,
+        updated_at: repo.updated_at || new Date().toISOString(),
+        owner: repo.owner || { login: 'unknown', avatar_url: '', type: 'User' }
+      }));
     } catch (error) {
       console.error('Failed to fetch repositories:', error);
       throw new Error('Failed to fetch repositories');
@@ -229,7 +234,12 @@ export class GitHubService {
         order: 'desc',
       });
 
-      return data.items;
+      // Transform the data to match our interface
+      return data.items.map(repo => ({
+        ...repo,
+        updated_at: repo.updated_at || new Date().toISOString(),
+        owner: repo.owner || { login: 'unknown', avatar_url: '', type: 'User' }
+      }));
     } catch (error) {
       console.error('Failed to search repositories:', error);
       throw new Error('Failed to search repositories');
@@ -293,7 +303,11 @@ export class GitHubService {
         direction: 'desc',
       });
 
-      return data;
+      // Transform the data to match our interface
+      return data.map(pr => ({
+        ...pr,
+        user: pr.user || { login: 'unknown', avatar_url: '' }
+      }));
     } catch (error) {
       console.error('Failed to fetch pull requests:', error);
       throw new Error('Failed to fetch pull requests');
@@ -349,4 +363,3 @@ export function getGitHubService(): GitHubService {
 export function resetGitHubService(): void {
   githubService = null;
 }
-

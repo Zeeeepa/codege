@@ -185,7 +185,7 @@ const AddProjectDialog: React.FC<AddProjectDialogProps> = ({ onClose, onProjectA
                             {repo.language}
                           </span>
                         )}
-                        <span className="updated">Updated {formatDate(repo.updated_at)}</span>
+                        <span className="updated">Updated {formatDate(repo.updated_at || new Date().toISOString())}</span>
                       </div>
                     </div>
                   ))
@@ -260,4 +260,3 @@ const AddProjectDialog: React.FC<AddProjectDialogProps> = ({ onClose, onProjectA
 };
 
 export default AddProjectDialog;
-

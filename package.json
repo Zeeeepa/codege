@@ -43,6 +43,7 @@
     ]
   },
   "devDependencies": {
+    "@types/crypto-js": "^4.2.2",
     "@types/jest": "^27.5.0"
   }
 }

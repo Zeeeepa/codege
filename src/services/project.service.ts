@@ -253,9 +253,7 @@ export class ProjectService {
 
       // Call Codegen API to create agent run with CreatePlan template
       const agentRun = await apiClient.createAgentRun(organizationId, {
-        prompt: this.buildCreatePlanPrompt(requirement.text),
-        repository_name: project.repository.full_name,
-        branch_name: project.repository.default_branch
+        prompt: this.buildCreatePlanPrompt(requirement.text)
       });
 
       // Create plan record
@@ -487,9 +485,7 @@ Review this plan and click "Start" to begin implementation.
 
       // Call Codegen API to start implementation
       const agentRun = await apiClient.createAgentRun(organizationId, {
-        prompt: this.buildImplementPlanPrompt(plan.content, project.repository.full_name, requirement.text),
-        repository_name: project.repository.full_name,
-        branch_name: project.repository.default_branch
+        prompt: this.buildImplementPlanPrompt(plan.content, project.repository.full_name, requirement.text)
       });
 
       // Update plan with agent run ID
@@ -663,4 +659,3 @@ export function getProjectService(): ProjectService {
 export function resetProjectService(): void {
   projectService = null;
 }
-
