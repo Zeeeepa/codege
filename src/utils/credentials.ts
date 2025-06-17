@@ -27,26 +27,37 @@ export interface CredentialsValidationResult {
 export function getCredentials(): Preferences {
   const preferences = getPreferenceValues<Preferences>();
   
-  if (!preferences.apiToken) {
-    // Instead of throwing immediately, return empty credentials
-    // The calling code should check hasCredentials() first
-    console.warn("⚠️ No API token found in preferences");
-  }
+  // Check for environment variables first (React app variables)
+  const envApiToken = process.env.REACT_APP_CODEGEN_API_TOKEN || 
+                      process.env.CODEGEN_API_TOKEN;
+  const envApiBaseUrl = process.env.REACT_APP_CODEGEN_API_BASE_URL || 
+                        process.env.CODEGEN_API_BASE_URL || 
+                        process.env.RAYCAST_CODEGEN_API_BASE_URL;
+  const envOrgId = process.env.REACT_APP_CODEGEN_ORG_ID || 
+                   process.env.CODEGEN_ORG_ID;
 
-  // Check for environment variable first, then preferences, then default
-  const apiBaseUrl = process.env.RAYCAST_CODEGEN_API_BASE_URL || 
-                     preferences.apiBaseUrl || 
-                     "https://api.codegen.com";
+  // Use environment variables if available, otherwise fall back to preferences
+  const apiToken = envApiToken || preferences.apiToken || '';
+  const apiBaseUrl = envApiBaseUrl || preferences.apiBaseUrl || "https://api.codegen.com";
+  const defaultOrganization = envOrgId || preferences.defaultOrganization || '';
 
-  console.log("🔧 API Base URL configuration:", {
-    fromEnv: !!process.env.RAYCAST_CODEGEN_API_BASE_URL,
-    fromPrefs: !!preferences.apiBaseUrl,
-    finalUrl: apiBaseUrl
+  console.log("🔧 Credentials configuration:", {
+    hasEnvToken: !!envApiToken,
+    hasPrefsToken: !!preferences.apiToken,
+    finalHasToken: !!apiToken,
+    apiBaseUrl: apiBaseUrl,
+    hasOrgId: !!defaultOrganization
   });
 
+  if (!apiToken) {
+    console.warn("⚠️ No API token found in environment variables or preferences");
+  }
+
   return {
-    ...preferences,
+    apiToken,
     apiBaseUrl,
+    defaultOrganization,
+    userId: preferences.userId,
   };
 }
 
@@ -278,6 +289,14 @@ export async function showCredentialsError(error: string) {
  */
 export function hasCredentials(): boolean {
   try {
+    // Check environment variables first
+    const envApiToken = process.env.REACT_APP_CODEGEN_API_TOKEN || 
+                        process.env.CODEGEN_API_TOKEN;
+    if (envApiToken) {
+      return true;
+    }
+
+    // Fall back to preferences
     const preferences = getPreferenceValues<Preferences>();
     return !!preferences.apiToken;
   } catch {
