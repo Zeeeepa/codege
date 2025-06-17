@@ -231,7 +231,7 @@ const PlanEditor: React.FC<PlanEditorProps> = ({ requirement, onClose, onPlanUpd
               onChange={handleContentChange}
               placeholder="Implementation plan will appear here..."
               className="plan-textarea"
-              disabled={loading || implementing}
+              disabled={implementing}
             />
 
             <div className="editor-footer">
