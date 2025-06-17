@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { setPreferenceValues, getPreferenceValuesAsync } from '../utils/webPreferences';
+import { setPreferenceValues } from '../utils/webPreferences';
 import { showToast, Toast_Style as Toast } from './WebToast';
 import { getCredentials } from '../utils/credentials';
 import { validateApiUrl, normalizeApiUrl } from '../utils/urlValidator';
@@ -34,11 +34,12 @@ const CredentialsSetup: React.FC<CredentialsSetupProps> = ({ onCredentialsSet })
         if (credentials.apiToken) setApiToken(credentials.apiToken);
         if (credentials.apiBaseUrl) setApiBaseUrl(credentials.apiBaseUrl);
         if (credentials.defaultOrganization) setOrgId(credentials.defaultOrganization);
+        else if (credentials.organizationId) setOrgId(credentials.organizationId.toString());
 
         console.log("🔧 Loaded credentials:", {
           hasToken: !!credentials.apiToken,
           hasBaseUrl: !!credentials.apiBaseUrl,
-          hasOrgId: !!credentials.defaultOrganization,
+          hasOrgId: !!(credentials.defaultOrganization || credentials.organizationId),
           envVariablesDetected: hasEnvToken || hasEnvBaseUrl || hasEnvOrgId
         });
       } catch (error) {
