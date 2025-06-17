@@ -28,7 +28,9 @@ export function getCredentials(): Preferences {
   const preferences = getPreferenceValues<Preferences>();
   
   if (!preferences.apiToken) {
-    throw new Error("API token is required. Please set it in extension preferences.");
+    // Instead of throwing immediately, return empty credentials
+    // The calling code should check hasCredentials() first
+    console.warn("⚠️ No API token found in preferences");
   }
 
   // Check for environment variable first, then preferences, then default

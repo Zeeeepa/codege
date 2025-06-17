@@ -4,7 +4,7 @@ import { AgentRunResponse, AgentRunFilters, SortOptions } from "../api/types";
 import { getAgentRunCache } from "../storage/agentRunCache";
 import { getAPIClient } from "../api/client";
 import { filterAgentRuns, sortAgentRuns } from "../utils/filtering";
-import { getDefaultOrganizationId } from "../utils/credentials";
+import { getDefaultOrganizationId, hasCredentials } from "../utils/credentials";
 import { SyncStatus } from "../storage/cacheTypes";
 import { getBackgroundMonitoringService } from "../utils/backgroundMonitoring";
 
@@ -43,8 +43,17 @@ export function useCachedAgentRuns(): UseCachedAgentRunsResult {
   const apiClient = getAPIClient();
   const backgroundMonitoring = getBackgroundMonitoringService();
 
+  // Check if credentials are available
+  const credentialsAvailable = hasCredentials();
+
   // Initialize organization ID and start background monitoring
   useEffect(() => {
+    // Skip initialization if no credentials
+    if (!credentialsAvailable) {
+      console.log("⚠️ No credentials available, skipping initialization");
+      setError("API token is required. Please set it in extension preferences.");
+      return;
+    }
     async function initializeOrgId() {
       const defaultOrgId = await getDefaultOrganizationId();
       console.log(`Initialized organization ID: ${defaultOrgId}`);
@@ -62,10 +71,15 @@ export function useCachedAgentRuns(): UseCachedAgentRunsResult {
       // Note: We don't stop monitoring here because other components might be using it
       // The monitoring will continue running in the background
     };
-  }, [backgroundMonitoring]);
+  }, [backgroundMonitoring, credentialsAvailable]);
 
   // Load cached data
   const loadCachedData = useCallback(async () => {
+    if (!credentialsAvailable) {
+      console.log("No credentials available, skipping cache load");
+      return;
+    }
+    
     if (!organizationId) {
       console.log("No organization ID set, skipping cache load");
       return;
@@ -83,10 +97,15 @@ export function useCachedAgentRuns(): UseCachedAgentRunsResult {
       console.error("Error loading cached data:", err);
       setError(err instanceof Error ? err.message : "Failed to load cached data");
     }
-  }, [organizationId, cache]);
+  }, [organizationId, cache, credentialsAvailable]);
 
   // Sync with API
   const syncWithAPI = useCallback(async (showSuccessToast = false) => {
+    if (!credentialsAvailable) {
+      console.log("No credentials available, skipping API sync");
+      return;
+    }
+    
     if (!organizationId) return;
 
     try {
@@ -128,7 +147,7 @@ export function useCachedAgentRuns(): UseCachedAgentRunsResult {
     } finally {
       setIsRefreshing(false);
     }
-  }, [organizationId, cache]);
+  }, [organizationId, cache, credentialsAvailable]);
 
   // Refresh function (load cache + sync)
   const refresh = useCallback(async () => {

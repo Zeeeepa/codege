@@ -22,13 +22,18 @@ export class CodegenAPIClient {
   constructor() {
     const credentials = getCredentials();
     this.baseUrl = credentials.apiBaseUrl || DEFAULT_API_BASE_URL;
-    this.apiToken = credentials.apiToken;
+    this.apiToken = credentials.apiToken || '';
   }
 
   private async makeRequest<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
+    // Check if API token is available
+    if (!this.apiToken) {
+      throw new Error("API token is required. Please set it in extension preferences.");
+    }
+    
     const url = `${this.baseUrl}${endpoint}`;
     
     const defaultHeaders = {
@@ -229,7 +234,13 @@ let apiClient: CodegenAPIClient | null = null;
 
 export function getAPIClient(): CodegenAPIClient {
   if (!apiClient) {
-    apiClient = new CodegenAPIClient();
+    try {
+      apiClient = new CodegenAPIClient();
+    } catch (error) {
+      // If credentials are missing, still create the client but it will fail on API calls
+      console.warn("⚠️ API client created without valid credentials:", error);
+      apiClient = new CodegenAPIClient();
+    }
   }
   return apiClient;
 }

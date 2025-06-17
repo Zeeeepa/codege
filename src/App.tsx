@@ -4,6 +4,7 @@ import { ToastProvider, setGlobalToastManager, useToast } from './components/Web
 import { AlertProvider, setGlobalAlertManager, useAlert } from './components/WebAlert';
 import { setGlobalNavigate } from './hooks/useWebNavigation';
 import { useNavigate } from 'react-router-dom';
+import { hasCredentials } from './utils/credentials';
 
 // Import main components
 import CreateAgentRun from './create-agent-run';
@@ -11,6 +12,7 @@ import ListAgentRuns from './list-agent-runs';
 import ListOrganizations from './list-organizations';
 import ProjectDashboard from './components/ProjectDashboard';
 import GitHubCallback from './components/GitHubCallback';
+import CredentialsSetup from './components/CredentialsSetup';
 
 // App Layout Component
 function AppLayout({ children }: { children: React.ReactNode }) {
@@ -68,6 +70,57 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 
 // Main App Component
 function App() {
+  const [credentialsAvailable, setCredentialsAvailable] = React.useState<boolean | null>(null);
+
+  // Check credentials on mount
+  React.useEffect(() => {
+    const checkCredentials = () => {
+      const available = hasCredentials();
+      console.log('🔐 Credentials check:', available);
+      setCredentialsAvailable(available);
+    };
+
+    checkCredentials();
+
+    // Listen for credentials changes
+    const handleCredentialsChange = () => {
+      checkCredentials();
+    };
+
+    window.addEventListener('preferences-changed', handleCredentialsChange);
+    return () => {
+      window.removeEventListener('preferences-changed', handleCredentialsChange);
+    };
+  }, []);
+
+  // Show loading while checking credentials
+  if (credentialsAvailable === null) {
+    return (
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        fontSize: '18px',
+        color: '#666'
+      }}>
+        Loading...
+      </div>
+    );
+  }
+
+  // Show credentials setup if not available
+  if (!credentialsAvailable) {
+    return (
+      <ToastProvider>
+        <AlertProvider>
+          <CredentialsSetup onCredentialsSet={() => setCredentialsAvailable(true)} />
+        </AlertProvider>
+      </ToastProvider>
+    );
+  }
+
+  // Show main app if credentials are available
   return (
     <Router>
       <ToastProvider>
