@@ -6,19 +6,22 @@ import { validateApiUrl, normalizeApiUrl } from "./urlValidator";
 
 import { storeUserInfo, clearStoredUserInfo, isStoredUserInfoValid, getStoredUserInfo } from "../storage/userStorage";
 import { UserResponse } from "../api/types";
-import { API_ENDPOINTS, DEFAULT_API_BASE_URL } from "../api/constants";
+import { API_ENDPOINTS } from "../api/constants";
 
 export interface Preferences {
-  apiToken: string;
+  apiToken?: string;
+  token?: string; // Legacy token name
   defaultOrganization?: string;
   userId?: string;
   apiBaseUrl?: string;
+  organizationId?: string; // Added for compatibility
 }
 
 export interface Credentials {
   apiToken: string;
   organizationId?: number;
   apiBaseUrl: string;
+  defaultOrganization?: string; // Added for backward compatibility
 }
 
 export interface CredentialsValidationResult {
@@ -33,62 +36,69 @@ export interface CredentialsValidationResult {
  * Get user preferences with validation
  */
 export function getCredentials(): Credentials {
-  const preferences = getPreferenceValues<Preferences>();
-  
-  // Check for environment variables first (multiple formats)
-  const envApiToken = process.env.REACT_APP_CODEGEN_API_TOKEN || 
-                      process.env.CODEGEN_API_TOKEN ||
-                      process.env.REACT_APP_CODEGEN_TOKEN ||
-                      process.env.CODEGEN_TOKEN;
-                      
-  const envApiBaseUrl = process.env.REACT_APP_CODEGEN_API_BASE_URL || 
-                        process.env.CODEGEN_API_BASE_URL || 
-                        process.env.RAYCAST_CODEGEN_API_BASE_URL;
-                        
-  const envOrgId = process.env.REACT_APP_CODEGEN_ORG_ID || 
-                   process.env.CODEGEN_ORG_ID;
-
-  // Use environment variables if available, otherwise fall back to preferences
-  const apiToken = preferences.apiToken || 
-                    preferences.token || // Legacy token name
+  try {
+    // Try to get credentials from preferences
+    const preferences = getPreferenceValues<Preferences>();
+    
+    // Check for environment variables first (multiple formats)
+    const envApiToken = process.env.REACT_APP_CODEGEN_API_TOKEN || 
+                       process.env.CODEGEN_API_TOKEN;
+    
+    const envApiBaseUrl = process.env.REACT_APP_CODEGEN_API_BASE_URL || 
+                         process.env.CODEGEN_API_BASE_URL;
+    
+    const envOrgId = process.env.REACT_APP_CODEGEN_ORG_ID || 
+                    process.env.CODEGEN_ORG_ID;
+    
+    // Get API token from preferences or environment variables
+    const apiToken = preferences.apiToken || 
+                    (preferences.token as string | undefined) || // Legacy token name
                     envApiToken || 
                     process.env.CODEGEN_API_TOKEN || 
                     process.env.CODEGEN_TOKEN || // Legacy env var name
                     process.env.REACT_APP_CODEGEN_API_TOKEN || 
-                    process.env.REACT_APP_CODEGEN_TOKEN; // React env var format
-  
-  const orgId = preferences.organizationId || 
+                    process.env.REACT_APP_CODEGEN_TOKEN || ''; // React env var format
+    
+    // Get organization ID from preferences or environment variables
+    const orgId = preferences.organizationId || 
+                 preferences.defaultOrganization ||
                  envOrgId || 
                  process.env.CODEGEN_ORG_ID || 
                  process.env.REACT_APP_CODEGEN_ORG_ID;
     
-  // Get API base URL from preferences or environment variables
-  let apiBaseUrl = preferences.apiBaseUrl || 
+    // Get API base URL from preferences or environment variables
+    let apiBaseUrl = preferences.apiBaseUrl || 
                     envApiBaseUrl || 
-                    process.env.REACT_APP_CODEGEN_API_BASE_URL;
+                    process.env.REACT_APP_CODEGEN_API_BASE_URL ||
+                    'https://api.codegen.com';
     
-  // Normalize the API base URL if it exists
-  if (apiBaseUrl) {
-    apiBaseUrl = normalizeApiUrl(apiBaseUrl);
-  }
+    // Normalize the API base URL if it exists
+    if (apiBaseUrl) {
+      apiBaseUrl = normalizeApiUrl(apiBaseUrl);
+    }
     
-  console.log("🔧 Credentials configuration:", {
-    hasEnvToken: !!envApiToken,
-    hasPrefsToken: !!preferences.apiToken,
-    finalHasToken: !!apiToken,
-    apiBaseUrl: apiBaseUrl,
-    hasOrgId: !!orgId
-  });
+    console.log("🔧 Credentials configuration:", {
+      hasEnvToken: !!envApiToken,
+      hasPrefsToken: !!preferences.apiToken,
+      finalHasToken: !!apiToken,
+      apiBaseUrl: apiBaseUrl,
+      hasOrgId: !!orgId
+    });
 
-  if (!apiToken) {
-    console.warn("⚠️ No API token found in environment variables or preferences");
+    return {
+      apiToken,
+      organizationId: orgId ? parseInt(orgId, 10) : undefined,
+      apiBaseUrl,
+      defaultOrganization: preferences.defaultOrganization,
+    };
+  } catch (error) {
+    console.error('Failed to get credentials:', error);
+    return {
+      apiToken: '',
+      apiBaseUrl: 'https://api.codegen.com',
+      defaultOrganization: '',
+    };
   }
-
-  return {
-    apiToken,
-    organizationId: orgId ? parseInt(orgId, 10) : undefined,
-    apiBaseUrl,
-  };
 }
 
 /**
@@ -359,28 +369,33 @@ export function hasCredentials(): boolean {
 }
 
 /**
- * Get the default organization ID from preferences or LocalStorage
+ * Get the default organization ID from preferences or environment variables
  */
 export async function getDefaultOrganizationId(): Promise<number | null> {
   try {
-    // First check LocalStorage (set by the organization list)
-    const localStorageOrgId = await LocalStorage.getItem<string>("defaultOrganizationId");
-    if (localStorageOrgId) {
-      const orgId = parseInt(localStorageOrgId, 10);
-      if (!isNaN(orgId)) {
-        return orgId;
-      }
+    // Try to get from environment variables first
+    const envOrgId = process.env.REACT_APP_CODEGEN_ORG_ID || 
+                    process.env.CODEGEN_ORG_ID;
+    
+    if (envOrgId) {
+      const orgId = parseInt(envOrgId, 10);
+      return isNaN(orgId) ? null : orgId;
     }
-
+    
     // Fallback to preferences
     const credentials = getCredentials();
+    if (credentials.organizationId) {
+      return credentials.organizationId;
+    }
+    
     if (credentials.defaultOrganization) {
       const orgId = parseInt(credentials.defaultOrganization, 10);
       return isNaN(orgId) ? null : orgId;
     }
     
     return null;
-  } catch {
+  } catch (error) {
+    console.error("Failed to get default organization ID:", error);
     return null;
   }
 }

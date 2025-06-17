@@ -163,6 +163,7 @@ export const Toast_Style = {
   Success: 'success' as const,
   Failure: 'failure' as const,
   Animated: 'animated' as const,
+  Warning: 'failure' as const, // Use failure style for warnings
 };
 
 export { ToastProvider, Toast_Style as Toast };
