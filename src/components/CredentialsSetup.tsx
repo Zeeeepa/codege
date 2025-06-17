@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { setPreferenceValues, getPreferenceValuesAsync } from '../utils/webPreferences';
 import { showToast, Toast_Style as Toast } from './WebToast';
 import { getCredentials } from '../utils/credentials';
+import { validateApiUrl, normalizeApiUrl } from '../utils/urlValidator';
 
 // Interface for props
 interface CredentialsSetupProps {
@@ -58,11 +59,33 @@ const CredentialsSetup: React.FC<CredentialsSetupProps> = ({ onCredentialsSet })
       return;
     }
 
+    // Validate API URL
+    if (apiBaseUrl.trim()) {
+      const urlValidation = validateApiUrl(apiBaseUrl.trim());
+      if (!urlValidation.isValid) {
+        await showToast({
+          style: Toast.Failure,
+          title: "Invalid API URL",
+          message: urlValidation.message || "Please enter a valid API URL",
+        });
+        return;
+      }
+
+      // Show warning for potential CORS issues
+      if (urlValidation.corsRisk.hasCorsRisk) {
+        await showToast({
+          style: Toast.Warning,
+          title: "API URL Warning",
+          message: urlValidation.corsRisk.message || "The API URL may cause CORS issues",
+        });
+      }
+    }
+
     setIsLoading(true);
     try {
       await setPreferenceValues({
         apiToken: apiToken.trim(),
-        apiBaseUrl: apiBaseUrl.trim() || 'https://api.codegen.com',
+        apiBaseUrl: normalizeApiUrl(apiBaseUrl.trim() || 'https://api.codegen.com'),
         defaultOrganization: orgId.trim() || undefined,
       });
 
