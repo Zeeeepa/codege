@@ -4,9 +4,12 @@
   "description": "Codegen Web UI - AI Agent Management Platform",
   "private": true,
   "dependencies": {
+    "@octokit/auth-app": "^8.0.1",
+    "@octokit/rest": "^22.0.0",
     "@types/node": "^16.18.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
+    "crypto-js": "^4.2.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.8.0",
@@ -43,4 +46,3 @@
     "@types/jest": "^27.5.0"
   }
 }
-

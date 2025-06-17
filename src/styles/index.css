@@ -604,3 +604,5 @@ body {
   }
 }
 
+/* Import GitHub Integration Styles */
+@import './github-integration.css';
