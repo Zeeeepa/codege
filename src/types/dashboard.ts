@@ -10,6 +10,16 @@ export type DashboardSection =
   | 'organizations'
   | 'settings';
 
+// Dashboard section enum
+export enum DashboardSectionEnum {
+  OVERVIEW = 'dashboard',
+  AGENT_RUNS = 'runs',
+  PROJECTS = 'projects',
+  ORGANIZATIONS = 'organizations',
+  SETTINGS = 'settings',
+  CREATE_RUN = 'create-run'
+}
+
 // User information
 export interface UserInfo {
   id: string;
@@ -83,4 +93,3 @@ export interface SidebarProps {
   userInfo: UserInfo | null;
   isLoading: boolean;
 }
-
