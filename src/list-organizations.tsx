@@ -27,12 +27,8 @@ const Color = {
   SecondaryText: '#8E8E93'
 };
 
-// Load environment variables first
-try {
-  require('dotenv').config();
-} catch (error) {
-  console.log("dotenv loading error:", error);
-}
+// Environment variables are automatically loaded by Create React App
+// No need to manually configure dotenv in client-side code
 
 // Type for organizations from validation (simplified structure)
 type BasicOrganization = {

@@ -1,5 +1,4 @@
 import { Octokit } from '@octokit/rest';
-import { createAppAuth } from '@octokit/auth-app';
 import CryptoJS from 'crypto-js';
 import { LocalStorage } from '../utils/webStorage';
 import { showToast, Toast_Style as Toast } from '../components/WebToast';
