@@ -1,0 +1,281 @@
+/* Settings Page Styles */
+
+.settings-page {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: var(--space-6);
+}
+
+.settings-header {
+  margin-bottom: var(--space-8);
+}
+
+.settings-title {
+  font-size: 1.8rem;
+  margin: 0 0 var(--space-2) 0;
+  color: var(--color-text-primary);
+}
+
+.settings-description {
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.settings-card {
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-6);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border-primary);
+  overflow: hidden;
+}
+
+.settings-card-header {
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-border-primary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.settings-card-title {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--color-text-primary);
+}
+
+.settings-card-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.settings-card-content {
+  padding: var(--space-4);
+}
+
+.settings-subheading {
+  font-size: 1rem;
+  margin: var(--space-4) 0 var(--space-3) 0;
+  color: var(--color-text-primary);
+  border-bottom: 1px solid var(--color-border-primary);
+  padding-bottom: var(--space-2);
+}
+
+.settings-variables {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.settings-variable-item {
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border-primary);
+}
+
+.settings-variable-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-2);
+}
+
+.settings-variable-name {
+  font-family: monospace;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.settings-variable-status {
+  font-size: 0.8rem;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+.settings-variable-status.valid {
+  background-color: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.settings-variable-status.invalid {
+  background-color: var(--color-error-bg);
+  color: var(--color-error);
+}
+
+.settings-variable-status.connected {
+  background-color: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.settings-variable-status.disconnected {
+  background-color: var(--color-error-bg);
+  color: var(--color-error);
+}
+
+.settings-variable-value {
+  font-family: monospace;
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-2);
+  word-break: break-all;
+  color: var(--color-text-secondary);
+}
+
+.settings-variable-description {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+
+.settings-help {
+  margin-top: var(--space-4);
+  padding: var(--space-3);
+  background-color: var(--color-info-bg);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+
+.settings-help code {
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 0.1rem 0.3rem;
+  border-radius: var(--radius-sm);
+  font-family: monospace;
+}
+
+.settings-button {
+  background-color: var(--color-secondary);
+  color: var(--color-text-primary);
+  border: none;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color var(--transition-fast);
+}
+
+.settings-button:hover {
+  background-color: var(--color-secondary-hover);
+}
+
+.settings-button.primary {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.settings-button.primary:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.settings-button.danger {
+  background-color: var(--color-error-bg);
+  color: var(--color-error);
+}
+
+.settings-button.danger:hover {
+  background-color: var(--color-error);
+  color: white;
+}
+
+.settings-github-status {
+  margin-bottom: var(--space-4);
+  padding: var(--space-3);
+  background-color: var(--color-bg-tertiary);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-primary);
+}
+
+.settings-status-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.settings-status-label {
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.settings-status-value {
+  font-weight: 500;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+.settings-status-value.connected {
+  background-color: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.settings-status-value.disconnected {
+  background-color: var(--color-error-bg);
+  color: var(--color-error);
+}
+
+.settings-github-user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border-primary);
+}
+
+.github-user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.github-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.github-user-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.github-username {
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.github-name {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+
+.settings-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-10);
+  color: var(--color-text-secondary);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .settings-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+  
+  .settings-card-actions {
+    width: 100%;
+  }
+  
+  .settings-button {
+    flex: 1;
+    text-align: center;
+  }
+}
+

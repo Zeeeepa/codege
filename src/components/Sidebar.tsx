@@ -61,53 +61,94 @@ const Sidebar: React.FC<SidebarProps> = ({
   return (
     <div className="dashboard-sidebar">
       <div className="sidebar-header">
-        <h2 className="sidebar-title">Codegen</h2>
-        <div className="sidebar-user">
-          <div className="sidebar-user-avatar">
-            {userInfo?.avatar_url ? (
-              <img 
-                src={userInfo.avatar_url} 
-                alt={getUserDisplayName()} 
-                className="user-avatar"
-              />
-            ) : (
-              <div className="user-avatar-placeholder">
-                {getUserDisplayName().charAt(0).toUpperCase()}
-              </div>
-            )}
+        <div className="sidebar-title">Codegen</div>
+        
+        {isLoading ? (
+          <div className="sidebar-user-loading">
+            <div className="loading-spinner-small"></div>
           </div>
-          <div className="sidebar-user-info">
-            <div className="sidebar-user-name">{getUserDisplayName()}</div>
-            {userInfo?.email && (
-              <div className="sidebar-user-email">{userInfo.email}</div>
-            )}
+        ) : userInfo ? (
+          <div className="sidebar-user">
+            <div className="sidebar-user-avatar">
+              {userInfo.avatarUrl ? (
+                <img 
+                  src={userInfo.avatarUrl} 
+                  alt={userInfo.name} 
+                  className="user-avatar"
+                />
+              ) : (
+                <div className="user-avatar-placeholder">
+                  {userInfo.name ? userInfo.name.charAt(0).toUpperCase() : 'U'}
+                </div>
+              )}
+            </div>
+            <div className="sidebar-user-info">
+              <div className="sidebar-user-name">{userInfo.name || 'User'}</div>
+              <div className="sidebar-user-email">{userInfo.email || ''}</div>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="sidebar-user-not-logged-in">
+            <button className="sidebar-login-button" onClick={() => onSectionChange('settings')}>
+              Connect
+            </button>
+          </div>
+        )}
       </div>
       
       <nav className="sidebar-nav">
-        {navItems.map((item) => (
-          <div
-            key={item.id}
-            className={`sidebar-nav-item ${activeSection === item.id ? 'active' : ''}`}
-            onClick={() => onSectionChange(item.id)}
-          >
-            <span className="sidebar-nav-icon">{item.icon}</span>
-            <span className="sidebar-nav-text">{item.label}</span>
-          </div>
-        ))}
+        <div 
+          className={`sidebar-nav-item ${activeSection === 'dashboard' ? 'active' : ''}`}
+          onClick={() => onSectionChange('dashboard')}
+        >
+          <span className="sidebar-nav-icon">📊</span>
+          Dashboard
+        </div>
+        
+        <div 
+          className={`sidebar-nav-item ${activeSection === 'runs' ? 'active' : ''}`}
+          onClick={() => onSectionChange('runs')}
+        >
+          <span className="sidebar-nav-icon">🤖</span>
+          Agent Runs
+        </div>
+        
+        <div 
+          className={`sidebar-nav-item ${activeSection === 'projects' ? 'active' : ''}`}
+          onClick={() => onSectionChange('projects')}
+        >
+          <span className="sidebar-nav-icon">📁</span>
+          Projects
+        </div>
+        
+        <div 
+          className={`sidebar-nav-item ${activeSection === 'organizations' ? 'active' : ''}`}
+          onClick={() => onSectionChange('organizations')}
+        >
+          <span className="sidebar-nav-icon">🏢</span>
+          Organizations
+        </div>
+        
+        <div 
+          className={`sidebar-nav-item ${activeSection === 'settings' ? 'active' : ''}`}
+          onClick={() => onSectionChange('settings')}
+        >
+          <span className="sidebar-nav-icon">⚙️</span>
+          Settings
+        </div>
       </nav>
       
       <div className="sidebar-footer">
         <div className="sidebar-version">Version 1.0.0</div>
-        <a 
-          href="https://codegen.com/docs" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="sidebar-link"
-        >
-          Documentation
-        </a>
+        <div className="sidebar-links">
+          <a href="https://docs.codegen.com" target="_blank" rel="noopener noreferrer" className="sidebar-link">
+            Documentation
+          </a>
+          {' • '}
+          <a href="https://github.com/codegen-sh/codegen" target="_blank" rel="noopener noreferrer" className="sidebar-link">
+            GitHub
+          </a>
+        </div>
       </div>
     </div>
   );

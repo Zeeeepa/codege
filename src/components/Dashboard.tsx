@@ -14,6 +14,8 @@ import {
   Organization,
   AgentRun
 } from '../types/dashboard';
+import SettingsPage from './SettingsPage';
+import '../styles/settings.css';
 
 // Lazy load components for better performance
 const ListAgentRuns = lazy(() => import('../list-agent-runs'));
@@ -37,7 +39,17 @@ const Dashboard: React.FC<DashboardProps> = ({ initialSection }) => {
     organizations: [],
     agentRuns: [],
     githubConnected: false,
-    error: null
+    error: null,
+    stats: {
+      totalRuns: 0,
+      totalProjects: 0,
+      totalOrganizations: 0
+    },
+    recentRuns: [],
+    recentProjects: [],
+    runs: [],
+    projects: [],
+    organizations: []
   });
   
   const navigate = useNavigate();
@@ -134,126 +146,147 @@ const Dashboard: React.FC<DashboardProps> = ({ initialSection }) => {
   // Render active section content
   const renderSectionContent = () => {
     switch (state.activeSection) {
-      case DashboardSection.OVERVIEW:
+      case 'dashboard':
         return (
           <div className="dashboard-overview">
             <div className="dashboard-header">
-              <h1 className="dashboard-title">Dashboard Overview</h1>
+              <h1 className="dashboard-title">Dashboard</h1>
               <p className="dashboard-description">
-                Welcome to Codegen. View your agent runs, organizations, and projects.
+                Welcome to your Codegen dashboard. View your recent activity and manage your projects.
               </p>
             </div>
             
             <div className="dashboard-grid">
               <div className="dashboard-stat-card">
-                <div className="stat-value">{state.organizations.length}</div>
-                <div className="stat-label">Organizations</div>
-                <div className="stat-action" onClick={() => handleSectionChange(DashboardSection.ORGANIZATIONS)}>
-                  View All →
-                </div>
+                <div className="stat-value">{state.stats.totalRuns || 0}</div>
+                <div className="stat-label">Total Agent Runs</div>
+                <div className="stat-action" onClick={() => handleSectionChange('runs')}>View all runs →</div>
               </div>
               
               <div className="dashboard-stat-card">
-                <div className="stat-value">{state.agentRuns.length}</div>
-                <div className="stat-label">Agent Runs</div>
-                <div className="stat-action" onClick={() => handleSectionChange(DashboardSection.AGENT_RUNS)}>
-                  View All →
-                </div>
+                <div className="stat-value">{state.stats.totalProjects || 0}</div>
+                <div className="stat-label">Projects</div>
+                <div className="stat-action" onClick={() => handleSectionChange('projects')}>View all projects →</div>
+              </div>
+              
+              <div className="dashboard-stat-card">
+                <div className="stat-value">{state.stats.totalOrganizations || 0}</div>
+                <div className="stat-label">Organizations</div>
+                <div className="stat-action" onClick={() => handleSectionChange('organizations')}>View all organizations →</div>
               </div>
               
               <div className="dashboard-stat-card">
                 <div className="stat-value">{state.githubConnected ? 'Connected' : 'Not Connected'}</div>
                 <div className="stat-label">GitHub Status</div>
-                <div className="stat-action" onClick={() => handleSectionChange(DashboardSection.PROJECTS)}>
-                  {state.githubConnected ? 'View Projects →' : 'Connect →'}
-                </div>
+                <div className="stat-action" onClick={() => handleSectionChange('settings')}>Manage settings →</div>
               </div>
             </div>
             
             <div className="dashboard-card">
               <div className="dashboard-card-header">
                 <h2 className="dashboard-card-title">Recent Agent Runs</h2>
-                <button 
-                  className="dashboard-card-action"
-                  onClick={() => handleSectionChange(DashboardSection.AGENT_RUNS)}
-                >
+                <button className="dashboard-card-action" onClick={() => handleSectionChange('runs')}>
                   View All
                 </button>
               </div>
               <div className="dashboard-card-content">
-                {state.agentRuns.length > 0 ? (
-                  <div className="recent-runs-list">
-                    {/* Render recent runs here */}
-                    <p>Recent runs will be displayed here</p>
-                  </div>
-                ) : (
-                  <p>No recent agent runs found.</p>
-                )}
+                <Suspense fallback={<div className="component-loading">Loading recent runs...</div>}>
+                  <ListAgentRuns runs={state.recentRuns} limit={5} />
+                </Suspense>
+              </div>
+            </div>
+            
+            <div className="dashboard-card">
+              <div className="dashboard-card-header">
+                <h2 className="dashboard-card-title">Recent Projects</h2>
+                <button className="dashboard-card-action" onClick={() => handleSectionChange('projects')}>
+                  View All
+                </button>
+              </div>
+              <div className="dashboard-card-content">
+                <Suspense fallback={<div className="component-loading">Loading recent projects...</div>}>
+                  <ListProjects projects={state.recentProjects} limit={5} />
+                </Suspense>
               </div>
             </div>
           </div>
         );
-      
-      case DashboardSection.AGENT_RUNS:
+        
+      case 'runs':
         return (
-          <Suspense fallback={<LoadingComponent />}>
-            <ListAgentRuns />
-          </Suspense>
-        );
-      
-      case DashboardSection.CREATE_RUN:
-        return (
-          <Suspense fallback={<LoadingComponent />}>
-            <CreateAgentRun />
-          </Suspense>
-        );
-      
-      case DashboardSection.ORGANIZATIONS:
-        return (
-          <Suspense fallback={<LoadingComponent />}>
-            <ListOrganizations />
-          </Suspense>
-        );
-      
-      case DashboardSection.PROJECTS:
-        return (
-          <Suspense fallback={<LoadingComponent />}>
-            <ProjectDashboard />
-          </Suspense>
-        );
-      
-      case DashboardSection.SETTINGS:
-        return (
-          <div className="dashboard-settings">
+          <div className="dashboard-runs">
             <div className="dashboard-header">
-              <h1 className="dashboard-title">Settings</h1>
+              <h1 className="dashboard-title">Agent Runs</h1>
               <p className="dashboard-description">
-                Manage your API credentials and preferences.
+                View and manage your agent runs.
               </p>
             </div>
             
             <div className="dashboard-card">
-              <div className="dashboard-card-header">
-                <h2 className="dashboard-card-title">API Credentials</h2>
-              </div>
               <div className="dashboard-card-content">
-                <p>API credential settings will be displayed here</p>
-              </div>
-            </div>
-            
-            <div className="dashboard-card">
-              <div className="dashboard-card-header">
-                <h2 className="dashboard-card-title">GitHub Integration</h2>
-              </div>
-              <div className="dashboard-card-content">
-                <p>GitHub integration settings will be displayed here</p>
+                <Suspense fallback={<div className="component-loading">Loading agent runs...</div>}>
+                  <ListAgentRuns runs={state.runs} />
+                </Suspense>
               </div>
             </div>
           </div>
         );
-      
+        
+      case 'projects':
+        return (
+          <div className="dashboard-projects">
+            <div className="dashboard-header">
+              <h1 className="dashboard-title">Projects</h1>
+              <p className="dashboard-description">
+                View and manage your projects.
+              </p>
+            </div>
+            
+            <div className="dashboard-card">
+              <div className="dashboard-card-content">
+                <Suspense fallback={<div className="component-loading">Loading projects...</div>}>
+                  <ListProjects projects={state.projects} />
+                </Suspense>
+              </div>
+            </div>
+          </div>
+        );
+        
+      case 'organizations':
+        return (
+          <div className="dashboard-organizations">
+            <div className="dashboard-header">
+              <h1 className="dashboard-title">Organizations</h1>
+              <p className="dashboard-description">
+                View and manage your organizations.
+              </p>
+            </div>
+            
+            <div className="dashboard-card">
+              <div className="dashboard-card-content">
+                <Suspense fallback={<div className="component-loading">Loading organizations...</div>}>
+                  <ListOrganizations organizations={state.organizations} />
+                </Suspense>
+              </div>
+            </div>
+          </div>
+        );
+        
+      case 'settings':
+        return (
+          <Suspense fallback={<div className="component-loading">Loading settings...</div>}>
+            <SettingsPage />
+          </Suspense>
+        );
+        
       default:
-        return <div>Select a section from the sidebar</div>;
+        return (
+          <div className="dashboard-error">
+            <h1>Unknown Section</h1>
+            <p>The requested section "{state.activeSection}" does not exist.</p>
+            <button onClick={() => handleSectionChange('dashboard')}>Return to Dashboard</button>
+          </div>
+        );
     }
   };
 
