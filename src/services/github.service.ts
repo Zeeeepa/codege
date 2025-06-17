@@ -140,11 +140,29 @@ export class GitHubService {
         throw new Error(`Failed to exchange code for token: ${tokenResponse.status} ${tokenResponse.statusText}`);
       }
 
+      // Parse the response carefully
       let tokenData: GitHubOAuthToken;
       try {
         const responseText = await tokenResponse.text();
         console.log('Token response text:', responseText);
-        tokenData = JSON.parse(responseText);
+        
+        // Check if the response is already an object (happens in some environments)
+        if (responseText === "[object Object]") {
+          throw new Error('Invalid response format: GitHub returned [object Object] as a string');
+        }
+        
+        // Try to parse as JSON
+        try {
+          tokenData = JSON.parse(responseText);
+        } catch (jsonError) {
+          // If JSON parsing fails, try to parse as URL-encoded form data
+          const params = new URLSearchParams(responseText);
+          tokenData = {
+            access_token: params.get('access_token') || '',
+            token_type: params.get('token_type') || 'bearer',
+            scope: params.get('scope') || ''
+          };
+        }
       } catch (parseError) {
         console.error('Failed to parse token response:', parseError);
         throw new Error('Invalid response format from GitHub OAuth server');
