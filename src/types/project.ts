@@ -1,4 +1,5 @@
 // Project Management Types
+import { GitHubRepository } from './github';
 export interface Project {
   id: string;
   name: string;
@@ -212,4 +213,3 @@ export interface PlanEditorState {
   isEdited: boolean;
   implementing: boolean;
 }
-

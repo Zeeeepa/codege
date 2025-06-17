@@ -11,12 +11,12 @@ export interface GitHubRepository {
   language: string | null;
   stargazers_count: number;
   forks_count: number;
-  updated_at: string;
+  updated_at: string | null;
   owner: {
     login: string;
     avatar_url: string;
-    type: string;
-  };
+    type?: string;
+  } | null;
 }
 
 export interface GitHubBranch {
@@ -33,7 +33,7 @@ export interface GitHubPullRequest {
   number: number;
   title: string;
   body: string | null;
-  state: 'open' | 'closed' | 'merged';
+  state: string; // GitHub API returns string, not enum
   html_url: string;
   head: {
     ref: string;
@@ -46,7 +46,7 @@ export interface GitHubPullRequest {
   user: {
     login: string;
     avatar_url: string;
-  };
+  } | null;
   created_at: string;
   updated_at: string;
   merged_at: string | null;
@@ -126,4 +126,3 @@ export interface GitHubAPIError {
     code: string;
   }>;
 }
-
