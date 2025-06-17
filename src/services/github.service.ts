@@ -115,82 +115,8 @@ export class GitHubService {
         throw new Error('OAuth state expired');
       }
 
-      // Exchange code for token
-      const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          client_id: GITHUB_CONFIG.clientId,
-          client_secret: GITHUB_CONFIG.clientSecret,
-          code,
-          redirect_uri: storedState.redirectUri,
-        }),
-      });
-
-      if (!tokenResponse.ok) {
-        const errorText = await tokenResponse.text();
-        console.error('Token exchange failed:', {
-          status: tokenResponse.status,
-          statusText: tokenResponse.statusText,
-          responseText: errorText
-        });
-        throw new Error(`Failed to exchange code for token: ${tokenResponse.status} ${tokenResponse.statusText}`);
-      }
-
-      // Parse the response carefully
-      let tokenData: GitHubOAuthToken;
-      
-      try {
-        // First, get the raw response text
-        const responseText = await tokenResponse.text();
-        console.log('Token response format:', typeof responseText);
-        
-        // Check if the response is already an object (happens in some environments)
-        if (responseText === "[object Object]") {
-          console.warn('Received "[object Object]" as response text - this indicates the response was already parsed');
-          
-          // Try to access the original response object
-          // This is a workaround for environments that auto-parse JSON
-          const originalResponse = tokenResponse as any;
-          if (originalResponse.data && typeof originalResponse.data === 'object') {
-            console.log('Using response.data object directly');
-            tokenData = originalResponse.data;
-          } else if (originalResponse.body && typeof originalResponse.body === 'object') {
-            console.log('Using response.body object directly');
-            tokenData = originalResponse.body;
-          } else {
-            // Fallback to URL-encoded parsing
-            console.log('Falling back to URL-encoded parsing');
-            const params = new URLSearchParams('access_token=&token_type=bearer&scope=');
-            tokenData = {
-              access_token: params.get('access_token') || '',
-              token_type: params.get('token_type') || 'bearer',
-              scope: params.get('scope') || ''
-            };
-          }
-        } else {
-          // Try to parse as JSON first
-          try {
-            tokenData = JSON.parse(responseText);
-            console.log('Successfully parsed response as JSON');
-          } catch (jsonError) {
-            // If JSON parsing fails, try to parse as URL-encoded form data
-            console.log('JSON parsing failed, trying URL-encoded format');
-            const params = new URLSearchParams(responseText);
-            tokenData = {
-              access_token: params.get('access_token') || '',
-              token_type: params.get('token_type') || 'bearer',
-              scope: params.get('scope') || ''
-            };
-          }
-        }
-      } catch (parseError) {
-        console.error('Failed to parse token response:', parseError);
-        throw new Error('Invalid response format from GitHub OAuth server');
-      }
+      // Exchange code for token using a more robust approach
+      const tokenData = await this.exchangeCodeForToken(code, storedState.redirectUri);
       
       // Validate the token data
       if (!tokenData || !tokenData.access_token) {
@@ -246,6 +172,165 @@ export class GitHubService {
       });
       return false;
     }
+  }
+
+  // Exchange code for token with better error handling and response parsing
+  private async exchangeCodeForToken(code: string, redirectUri: string): Promise<GitHubOAuthToken> {
+    // Prepare the request body
+    const requestBody = {
+      client_id: GITHUB_CONFIG.clientId,
+      client_secret: GITHUB_CONFIG.clientSecret,
+      code,
+      redirect_uri: redirectUri,
+    };
+
+    // First try the fetch API approach
+    try {
+      // Make the request with proper headers
+      const response = await fetch('https://github.com/login/oauth/access_token', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      // Check for HTTP errors
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Token exchange failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          responseText: errorText
+        });
+        throw new Error(`Failed to exchange code for token: ${response.status} ${response.statusText}`);
+      }
+
+      // Try to get the response as a clone first to avoid consuming it
+      const responseClone = response.clone();
+      
+      // Try to parse as JSON first
+      try {
+        const jsonData = await response.json();
+        console.log('Successfully parsed response as JSON');
+        
+        // Validate the token data structure
+        if (jsonData && typeof jsonData === 'object' && 'access_token' in jsonData) {
+          return jsonData as GitHubOAuthToken;
+        } else {
+          console.warn('JSON response missing access_token:', jsonData);
+        }
+      } catch (jsonError) {
+        console.warn('JSON parsing failed:', jsonError);
+        // Continue to try other methods
+      }
+
+      // If JSON parsing fails, try to parse as text and then as URL-encoded
+      try {
+        const textData = await responseClone.text();
+        
+        // Check if we got the infamous "[object Object]" string
+        if (textData === "[object Object]") {
+          console.warn('Received "[object Object]" as response text');
+          
+          // Try a different approach - use XMLHttpRequest as a fallback
+          return await this.exchangeCodeWithXHR(code, redirectUri);
+        }
+        
+        // Try to parse as JSON again (sometimes text() works better than json())
+        try {
+          const parsedJson = JSON.parse(textData);
+          if (parsedJson && typeof parsedJson === 'object' && 'access_token' in parsedJson) {
+            return parsedJson as GitHubOAuthToken;
+          }
+        } catch (innerJsonError) {
+          console.warn('Secondary JSON parsing failed:', innerJsonError);
+        }
+        
+        // Try to parse as URL-encoded form data
+        console.log('Trying URL-encoded format');
+        const params = new URLSearchParams(textData);
+        const accessToken = params.get('access_token');
+        
+        if (accessToken) {
+          return {
+            access_token: accessToken,
+            token_type: params.get('token_type') || 'bearer',
+            scope: params.get('scope') || ''
+          };
+        } else {
+          console.warn('URL-encoded parsing failed to find access_token');
+        }
+      } catch (textError) {
+        console.warn('Text parsing failed:', textError);
+      }
+      
+      // If we got here, all parsing attempts failed
+      throw new Error('Failed to parse GitHub OAuth response in any format');
+    } catch (fetchError) {
+      console.error('Fetch approach failed:', fetchError);
+      
+      // Try the XMLHttpRequest approach as a fallback
+      return await this.exchangeCodeWithXHR(code, redirectUri);
+    }
+  }
+  
+  // Fallback method using XMLHttpRequest
+  private exchangeCodeWithXHR(code: string, redirectUri: string): Promise<GitHubOAuthToken> {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', 'https://github.com/login/oauth/access_token', true);
+      xhr.setRequestHeader('Accept', 'application/json');
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      
+      xhr.onload = function() {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            // Try to parse as JSON
+            const response = JSON.parse(xhr.responseText);
+            if (response && response.access_token) {
+              resolve(response);
+              return;
+            }
+          } catch (e) {
+            console.warn('XHR JSON parsing failed:', e);
+            
+            // Try to parse as URL-encoded
+            try {
+              const params = new URLSearchParams(xhr.responseText);
+              const accessToken = params.get('access_token');
+              if (accessToken) {
+                resolve({
+                  access_token: accessToken,
+                  token_type: params.get('token_type') || 'bearer',
+                  scope: params.get('scope') || ''
+                });
+                return;
+              }
+            } catch (urlError) {
+              console.warn('XHR URL parsing failed:', urlError);
+            }
+          }
+          
+          // If we got here, parsing failed
+          reject(new Error(`Failed to parse OAuth response: ${xhr.responseText}`));
+        } else {
+          reject(new Error(`XHR request failed with status ${xhr.status}: ${xhr.statusText}`));
+        }
+      };
+      
+      xhr.onerror = function() {
+        reject(new Error('Network error during OAuth token exchange'));
+      };
+      
+      xhr.send(JSON.stringify({
+        client_id: GITHUB_CONFIG.clientId,
+        client_secret: GITHUB_CONFIG.clientSecret,
+        code,
+        redirect_uri: redirectUri,
+      }));
+    });
   }
 
   // Check if user is authenticated
