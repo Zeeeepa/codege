@@ -38,17 +38,17 @@ export function getPreferenceValues(): UserPreferences {
   try {
     const storedPrefs = localStorage.getItem(PREFERENCES_STORAGE_KEY);
     if (!storedPrefs) {
-      return DEFAULT_PREFERENCES;
+      return DEFAULT_PREFERENCES as UserPreferences;
     }
     
     const parsedPrefs = JSON.parse(storedPrefs);
     return {
       ...DEFAULT_PREFERENCES,
       ...parsedPrefs,
-    };
+    } as UserPreferences;
   } catch (error) {
     console.error('Failed to get preferences from storage:', error);
-    return DEFAULT_PREFERENCES;
+    return DEFAULT_PREFERENCES as UserPreferences;
   }
 }
 
@@ -68,6 +68,13 @@ export function savePreferenceValues(preferences: Partial<UserPreferences>): voi
     console.error('Failed to save preferences to storage:', error);
     throw error;
   }
+}
+
+/**
+ * Set preference values (alias for savePreferenceValues for backward compatibility)
+ */
+export function setPreferenceValues(preferences: Partial<UserPreferences>): void {
+  savePreferenceValues(preferences);
 }
 
 /**
@@ -110,4 +117,3 @@ export function applyTheme(): void {
     document.body.classList.remove('dark-theme');
   }
 }
-

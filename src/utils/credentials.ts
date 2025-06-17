@@ -3,12 +3,14 @@
  */
 
 import { LocalStorage } from './webStorage';
+import { showToast, Toast_Style as Toast } from '../components/WebToast';
 
 // Storage keys
 const STORAGE_KEYS = {
   API_TOKEN: 'codegen_api_token',
   ORG_ID: 'codegen_org_id',
   API_BASE_URL: 'codegen_api_base_url',
+  USER_INFO: 'codegen_user_info',
 };
 
 // Default API base URL
@@ -19,6 +21,22 @@ export interface CodegenCredentials {
   apiToken: string | null;
   organizationId: number | null;
   apiBaseUrl: string | null;
+}
+
+// User info interface
+export interface UserInfo {
+  id: string;
+  name: string;
+  email: string;
+  avatarUrl: string;
+}
+
+/**
+ * Check if credentials are available
+ */
+export function hasCredentials(): boolean {
+  const apiToken = localStorage.getItem(STORAGE_KEYS.API_TOKEN);
+  return !!apiToken && apiToken.length > 0;
 }
 
 /**
@@ -126,5 +144,74 @@ export function validateApiBaseUrl(url: string | null): boolean {
   } catch (e) {
     return false;
   }
+}
+
+/**
+ * Show credentials error toast
+ */
+export function showCredentialsError(message: string): void {
+  showToast({
+    style: Toast.Failure,
+    title: 'Authentication Error',
+    message: message || 'Please check your API credentials in settings',
+    primaryAction: {
+      title: 'Go to Settings',
+      onAction: () => {
+        window.location.href = '/settings';
+      },
+    },
+  });
+}
+
+/**
+ * Validate credentials
+ */
+export async function validateCredentials(): Promise<boolean> {
+  const credentials = await getCredentials();
+  
+  if (!credentials.apiToken) {
+    showCredentialsError('API token is missing');
+    return false;
+  }
+  
+  if (!validateApiToken(credentials.apiToken)) {
+    showCredentialsError('API token is invalid');
+    return false;
+  }
+  
+  if (!credentials.apiBaseUrl) {
+    showCredentialsError('API base URL is missing');
+    return false;
+  }
+  
+  if (!validateApiBaseUrl(credentials.apiBaseUrl)) {
+    showCredentialsError('API base URL is invalid');
+    return false;
+  }
+  
+  return true;
+}
+
+/**
+ * Get current user info
+ */
+export async function getCurrentUserInfo(): Promise<UserInfo | null> {
+  try {
+    const userInfoStr = await LocalStorage.getItem(STORAGE_KEYS.USER_INFO);
+    if (!userInfoStr) return null;
+    
+    return JSON.parse(userInfoStr);
+  } catch (error) {
+    console.error('Failed to get user info from storage:', error);
+    return null;
+  }
+}
+
+/**
+ * Get default organization ID
+ */
+export async function getDefaultOrganizationId(): Promise<number | null> {
+  const credentials = await getCredentials();
+  return credentials.organizationId;
 }
 
