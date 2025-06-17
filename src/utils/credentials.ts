@@ -2,6 +2,7 @@ import { getPreferenceValues } from "./webPreferences";
 import { showToast, Toast_Style as Toast } from "../components/WebToast";
 import { LocalStorage } from "./webStorage";
 import { fetchWithRetry } from "./fetchWithRetry";
+import { validateApiUrl, normalizeApiUrl } from "./urlValidator";
 
 import { storeUserInfo, clearStoredUserInfo, isStoredUserInfoValid, getStoredUserInfo } from "../storage/userStorage";
 import { UserResponse } from "../api/types";
@@ -12,6 +13,12 @@ export interface Preferences {
   defaultOrganization?: string;
   userId?: string;
   apiBaseUrl?: string;
+}
+
+export interface Credentials {
+  apiToken: string;
+  organizationId?: number;
+  apiBaseUrl: string;
 }
 
 export interface CredentialsValidationResult {
@@ -25,7 +32,7 @@ export interface CredentialsValidationResult {
 /**
  * Get user preferences with validation
  */
-export function getCredentials(): Preferences {
+export function getCredentials(): Credentials {
   const preferences = getPreferenceValues<Preferences>();
   
   // Check for environment variables first (multiple formats)
@@ -42,16 +49,35 @@ export function getCredentials(): Preferences {
                    process.env.CODEGEN_ORG_ID;
 
   // Use environment variables if available, otherwise fall back to preferences
-  const apiToken = envApiToken || preferences.apiToken || '';
-  const apiBaseUrl = envApiBaseUrl || preferences.apiBaseUrl || "https://api.codegen.com";
-  const defaultOrganization = envOrgId || preferences.defaultOrganization || '';
-
+  const apiToken = preferences.apiToken || 
+                    preferences.token || // Legacy token name
+                    envApiToken || 
+                    process.env.CODEGEN_API_TOKEN || 
+                    process.env.CODEGEN_TOKEN || // Legacy env var name
+                    process.env.REACT_APP_CODEGEN_API_TOKEN || 
+                    process.env.REACT_APP_CODEGEN_TOKEN; // React env var format
+  
+  const orgId = preferences.organizationId || 
+                 envOrgId || 
+                 process.env.CODEGEN_ORG_ID || 
+                 process.env.REACT_APP_CODEGEN_ORG_ID;
+    
+  // Get API base URL from preferences or environment variables
+  let apiBaseUrl = preferences.apiBaseUrl || 
+                    envApiBaseUrl || 
+                    process.env.REACT_APP_CODEGEN_API_BASE_URL;
+    
+  // Normalize the API base URL if it exists
+  if (apiBaseUrl) {
+    apiBaseUrl = normalizeApiUrl(apiBaseUrl);
+  }
+    
   console.log("🔧 Credentials configuration:", {
     hasEnvToken: !!envApiToken,
     hasPrefsToken: !!preferences.apiToken,
     finalHasToken: !!apiToken,
     apiBaseUrl: apiBaseUrl,
-    hasOrgId: !!defaultOrganization
+    hasOrgId: !!orgId
   });
 
   if (!apiToken) {
@@ -60,70 +86,81 @@ export function getCredentials(): Preferences {
 
   return {
     apiToken,
+    organizationId: orgId ? parseInt(orgId, 10) : undefined,
     apiBaseUrl,
-    defaultOrganization,
-    userId: preferences.userId,
   };
 }
 
 /**
- * Validate API token - uses cache first, only fetches if needed
+ * Validate credentials by making an API call
  */
 export async function validateCredentials(): Promise<CredentialsValidationResult> {
-  console.log("🔍 Starting credential validation...");
   try {
     const credentials = getCredentials();
-    console.log("📋 Credentials loaded:", {
-      apiBaseUrl: credentials.apiBaseUrl,
-      hasApiToken: !!credentials.apiToken,
-      tokenLength: credentials.apiToken?.length || 0,
-      defaultOrganization: credentials.defaultOrganization,
-      userId: credentials.userId
-    });
     
-    // Check if we have valid cached user info first
-    const isValid = await isStoredUserInfoValid(credentials.apiToken);
-    if (isValid) {
-      const storedInfo = await getStoredUserInfo();
-      if (storedInfo) {
-        console.log("✅ Using cached user info - no API call needed");
-        
-        // Get user display name from cache
-        const userDisplayName = storedInfo.full_name || 
-                               (storedInfo.github_username ? `@${storedInfo.github_username}` : undefined) ||
-                               storedInfo.email ||
-                               `User ${storedInfo.id}`;
+    // Check if API token is available
+    if (!credentials.apiToken) {
+      console.error("❌ No API token available");
+      return {
+        isValid: false,
+        error: "API token is required. Please set it in extension preferences.",
+      };
+    }
+    
+    // Validate API URL format
+    const urlValidation = validateApiUrl(credentials.apiBaseUrl);
+    if (!urlValidation.isValid) {
+      console.error("❌ Invalid API URL format:", urlValidation.message);
+      return {
+        isValid: false,
+        error: urlValidation.message || "Invalid API URL format",
+      };
+    }
+    
+    // Check for potential CORS issues
+    if (urlValidation.corsRisk.hasCorsRisk) {
+      console.warn("⚠️ Potential CORS issue detected:", urlValidation.corsRisk.message);
+      // We don't fail validation here, but we log a warning
+    }
+    
+    // Use the normalized URL
+    const normalizedBaseUrl = urlValidation.normalizedUrl;
+    
+    // Check if we have valid cached user info
+    if (await isStoredUserInfoValid(credentials.apiToken)) {
+      console.log("✅ Using cached user info");
+      const userInfo = await getStoredUserInfo();
+      
+      if (userInfo) {
+        // Get user display name
+        const userDisplayName = userInfo.full_name || 
+                               (userInfo.github_username ? `@${userInfo.github_username}` : undefined) ||
+                               userInfo.email ||
+                               `User ${userInfo.id}`;
         
         // Try to get cached organizations
-        let organizations: Array<{ id: number; name: string }> = [];
         try {
-          const cachedOrgs = await LocalStorage.getItem<string>("cachedOrganizations");
-          if (cachedOrgs) {
-            organizations = JSON.parse(cachedOrgs);
-            console.log("✅ Using cached organizations:", organizations.length, "orgs");
+          const cachedOrgsData = await LocalStorage.getItem("cachedOrganizations");
+          if (cachedOrgsData) {
+            const organizations = JSON.parse(cachedOrgsData);
+            console.log("📦 Using cached organizations:", organizations.length, "orgs");
+            
+            return {
+              isValid: true,
+              organizations,
+              userDisplayName,
+              userInfo,
+            };
           }
-        } catch (error) {
-          console.log("⚠️ Could not load cached organizations:", error);
+        } catch (cacheError) {
+          console.warn("⚠️ Failed to load cached organizations:", cacheError);
+          // Continue to API call if cache fails
         }
-        
-        return {
-          isValid: true,
-          organizations,
-          userDisplayName,
-          userInfo: {
-            id: storedInfo.id,
-            email: storedInfo.email,
-            github_user_id: storedInfo.github_user_id,
-            github_username: storedInfo.github_username,
-            avatar_url: storedInfo.avatar_url,
-            full_name: storedInfo.full_name,
-          },
-        };
       }
     }
     
-    console.log("💫 No valid cache found - fetching fresh data");
-    const endpoint = `${credentials.apiBaseUrl || DEFAULT_API_BASE_URL}${API_ENDPOINTS.USER_ME}`;
+    // Make API call to validate credentials
+    const endpoint = `${normalizedBaseUrl}${API_ENDPOINTS.USER_ME}`;
     console.log("🌐 Making request to:", endpoint);
     
     // Only make API call if no valid cache exists
@@ -175,7 +212,7 @@ export async function validateCredentials(): Promise<CredentialsValidationResult
           error: `API request failed with status ${meResponse.status}. Please try again.`,
         };
       }
-      
+
       const userInfo = await meResponse.json() as UserResponse;
       console.log("👤 User info received:", {
         id: userInfo.id,
@@ -199,7 +236,7 @@ export async function validateCredentials(): Promise<CredentialsValidationResult
       // Fetch and cache organizations for first-time setup
       let organizations: Array<{ id: number; name: string }> = [];
       try {
-        const orgEndpoint = `${credentials.apiBaseUrl || DEFAULT_API_BASE_URL}${API_ENDPOINTS.ORGANIZATIONS}`;
+        const orgEndpoint = `${normalizedBaseUrl}${API_ENDPOINTS.ORGANIZATIONS}`;
         console.log("🏢 Fetching organizations from:", orgEndpoint);
         
         const orgResponse = await fetchWithRetry(orgEndpoint, {
@@ -252,15 +289,9 @@ export async function validateCredentials(): Promise<CredentialsValidationResult
         // This is likely a CORS, network connectivity, or API endpoint issue
         errorMessage += "This could be due to network connectivity issues, CORS restrictions, or an incorrect API URL.";
         
-        // Check if the API URL looks valid
-        if (!credentials.apiBaseUrl?.startsWith('http')) {
-          errorMessage += " The API URL doesn't start with http:// or https://.";
-        }
-        
-        // Check if we're in a browser environment with mixed content restrictions
-        if (typeof window !== 'undefined' && window.location?.protocol === 'https:' && 
-            credentials.apiBaseUrl?.startsWith('http:')) {
-          errorMessage += " You're accessing this app via HTTPS but the API URL uses HTTP, which may be blocked by the browser.";
+        // Add URL validation information if available
+        if (urlValidation.corsRisk.message) {
+          errorMessage += " " + urlValidation.corsRisk.message;
         }
       } else if (fetchError instanceof Error) {
         errorMessage += fetchError.message;
@@ -277,29 +308,12 @@ export async function validateCredentials(): Promise<CredentialsValidationResult
   } catch (error) {
     console.error("❌ Credentials validation error:", error);
     
-    // Log additional error details
-    if (error instanceof Error) {
-      console.error("Error details:", {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-        cause: (error as any).cause
-      });
-    }
-    
-    // Clear stored user info on error
+    // Clear any stored user info if validation fails
     await clearStoredUserInfo();
     
-    if (error instanceof Error) {
-      return {
-        isValid: false,
-        error: error.message,
-      };
-    }
-
     return {
       isValid: false,
-      error: "Failed to validate credentials. Please check your network connection and try again.",
+      error: error instanceof Error ? error.message : "Unknown error occurred",
     };
   }
 }
@@ -415,7 +429,20 @@ export async function refreshUserDataFromAPI(): Promise<CredentialsValidationRes
     await clearStoredUserInfo();
     await LocalStorage.removeItem("cachedOrganizations");
     
-    const endpoint = `${credentials.apiBaseUrl || DEFAULT_API_BASE_URL}${API_ENDPOINTS.USER_ME}`;
+    // Validate API URL format
+    const urlValidation = validateApiUrl(credentials.apiBaseUrl);
+    if (!urlValidation.isValid) {
+      console.error("❌ Invalid API URL format:", urlValidation.message);
+      return {
+        isValid: false,
+        error: urlValidation.message || "Invalid API URL format",
+      };
+    }
+    
+    // Use the normalized URL
+    const normalizedBaseUrl = urlValidation.normalizedUrl;
+    
+    const endpoint = `${normalizedBaseUrl}${API_ENDPOINTS.USER_ME}`;
     console.log("🌐 Fetching fresh user info from:", endpoint);
     
     try {
@@ -449,7 +476,7 @@ export async function refreshUserDataFromAPI(): Promise<CredentialsValidationRes
       // Fetch and cache fresh organizations
       let organizations: Array<{ id: number; name: string }> = [];
       try {
-        const orgEndpoint = `${credentials.apiBaseUrl || DEFAULT_API_BASE_URL}${API_ENDPOINTS.ORGANIZATIONS}`;
+        const orgEndpoint = `${normalizedBaseUrl}${API_ENDPOINTS.ORGANIZATIONS}`;
         console.log("🏢 Fetching fresh organizations from:", orgEndpoint);
         
         const orgResponse = await fetchWithRetry(orgEndpoint, {
@@ -489,15 +516,9 @@ export async function refreshUserDataFromAPI(): Promise<CredentialsValidationRes
         // This is likely a CORS, network connectivity, or API endpoint issue
         errorMessage += "This could be due to network connectivity issues, CORS restrictions, or an incorrect API URL.";
         
-        // Check if the API URL looks valid
-        if (!credentials.apiBaseUrl?.startsWith('http')) {
-          errorMessage += " The API URL doesn't start with http:// or https://.";
-        }
-        
-        // Check if we're in a browser environment with mixed content restrictions
-        if (typeof window !== 'undefined' && window.location?.protocol === 'https:' && 
-            credentials.apiBaseUrl?.startsWith('http:')) {
-          errorMessage += " You're accessing this app via HTTPS but the API URL uses HTTP, which may be blocked by the browser.";
+        // Add URL validation information if available
+        if (urlValidation.corsRisk.message) {
+          errorMessage += " " + urlValidation.corsRisk.message;
         }
       } else if (fetchError instanceof Error) {
         errorMessage += fetchError.message;
