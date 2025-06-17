@@ -9,6 +9,8 @@ import { useNavigate } from 'react-router-dom';
 import CreateAgentRun from './create-agent-run';
 import ListAgentRuns from './list-agent-runs';
 import ListOrganizations from './list-organizations';
+import ProjectDashboard from './components/ProjectDashboard';
+import GitHubCallback from './components/GitHubCallback';
 
 // App Layout Component
 function AppLayout({ children }: { children: React.ReactNode }) {
@@ -47,6 +49,12 @@ function AppLayout({ children }: { children: React.ReactNode }) {
             >
               Organizations
             </button>
+            <button 
+              className="nav-button"
+              onClick={() => navigate('/projects')}
+            >
+              Projects
+            </button>
           </nav>
         </div>
       </header>
@@ -70,6 +78,8 @@ function App() {
               <Route path="/agent-runs" element={<ListAgentRuns />} />
               <Route path="/create" element={<CreateAgentRun />} />
               <Route path="/organizations" element={<ListOrganizations />} />
+              <Route path="/projects" element={<ProjectDashboard />} />
+              <Route path="/auth/callback" element={<GitHubCallback />} />
               <Route path="*" element={<Navigate to="/agent-runs" replace />} />
             </Routes>
           </AppLayout>
@@ -80,4 +90,3 @@ function App() {
 }
 
 export default App;
-
